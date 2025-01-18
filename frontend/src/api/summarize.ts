@@ -20,12 +20,17 @@ export async function summarizeText(
           role: "system",
           content:
             type === "book"
-              ? "You are a helpful assistant that summarizes books to help readers resume reading. Focus on key plot points, character developments, and important details to help the reader pick up where they left off."
+              ? `You are a helpful assistant that summarizes books chapter by chapter to help readers resume reading.
+              Focus on key plot points, character developments, and important details for one chapter at a time.
+              Always output only one chapter summary at a time. If the user requests a specific chapter, summarize only that chapter.
+              Chapter summaries should be self-contained and not reference other chapters.`
               : "You are a helpful assistant that summarizes text based on user queries.",
         },
         {
           role: "user",
-          content: `Text: ${text}\n\nQuery: ${query}\n\nPlease provide a concise summary based on the query.`,
+          content: type === "book"
+            ? `Book Text: ${text}\n\nQuery: ${query}\n\nPlease provide a concise summary of ${query.includes("chapter") ? "the requested chapter" : "each chapter one by one"}.`
+            : `Text: ${text}\n\nQuery: ${query}\n\nPlease provide a concise summary based on the query.`,
         },
       ],
       temperature: 0.7,
