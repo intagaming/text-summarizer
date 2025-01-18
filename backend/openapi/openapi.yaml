@@ -11,11 +11,11 @@ servers:
     description: Development server
 
 paths:
-  /convertEpubToHtml:
+  /convertEpubToChapters:
     post:
-      summary: Convert EPUB file to HTML
-      description: Accepts an EPUB file and returns its HTML conversion
-      operationId: convertEpubToHtml
+      summary: Split EPUB file into chapters
+      description: Accepts an EPUB file and returns its chapters as separate markdown documents
+      operationId: convertEpubToChapters
       requestBody:
         content:
           multipart/form-data:
@@ -30,12 +30,17 @@ paths:
         '200':
           description: Successful conversion
           content:
-            text/html:
+            application/json:
               schema:
-                type: string
+                type: array
+                items:
+                  type: string
+                  format: markdown
               example: |
-                <h1>Chapter 1</h1>
-                <p>This is the converted HTML content...</p>
+                [
+                  "# Chapter 1\n\nContent of chapter 1...",
+                  "# Chapter 2\n\nContent of chapter 2..."
+                ]
         '400':
           description: Bad request (invalid file type or size)
           content:
