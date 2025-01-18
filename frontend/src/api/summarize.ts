@@ -39,10 +39,11 @@ export async function summarizeText(
 }
 
 export async function summarizeChapter(
-  chapter: string,
   previousSummary: string,
+  chapter: string,
   apiKey: string
 ) {
+  console.log(123, previousSummary, chapter);
   try {
     const openai = new OpenAI({
       apiKey: apiKey,
@@ -66,7 +67,8 @@ export async function summarizeChapter(
             - Summaries of previous chapters
             - Full text of the current chapter to summarize
             
-            Answer with the summary of the current chapter.
+            If the provided text is not a chapter, return exactly "NOT A CHAPTER".
+            Otherwise, answer with the summary of the current chapter.
           `.trim(),
         },
         {
@@ -90,7 +92,11 @@ export async function summarizeChapter(
       max_tokens: 1000,
     });
 
-    return completion.choices[0].message.content;
+    const result = completion.choices[0].message.content?.trim();
+    if (result?.toUpperCase() === "NOT A CHAPTER") {
+      return "";
+    }
+    return result || "";
   } catch (error: unknown) {
     if (error instanceof Error) {
       throw new Error(`Failed to generate summary: ${error.message}`);

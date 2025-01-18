@@ -26,10 +26,6 @@ export class ProgressiveSummarizer {
       this.apiKey
     );
 
-    if (!summary) {
-      throw new Error("Failed to generate summary for this chapter");
-    }
-
     this.previousSummary = `${this.previousSummary}\n\n${summary}`;
     this.currentChapter++;
 
