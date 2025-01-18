@@ -9,10 +9,11 @@ export async function summarizeText(
     const openai = new OpenAI({
       apiKey: apiKey,
       baseURL: "https://openrouter.ai/api/v1",
+      dangerouslyAllowBrowser: true,
     });
 
     const completion = await openai.chat.completions.create({
-      model: "google/gemini-flash-1.5-8b",
+      model: "google/gemini-flash-1.5",
       messages: [
         {
           role: "system",
