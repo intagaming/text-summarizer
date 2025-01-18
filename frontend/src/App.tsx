@@ -6,7 +6,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardHeader,
@@ -38,25 +37,19 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const schema = z
-  .object({
-    file: z
-      .instanceof(File)
-      .refine(
-        (file) =>
-          file.type === "application/epub+zip" || file.type === "text/plain",
-        {
-          message: "Only EPUB and text files are allowed",
-        }
-      ),
-    query: z.string().optional(),
-    type: z.enum(["book", "general"]),
-    stopUntilChapter: z.string().optional(),
-  })
-  .refine((data) => data.type !== "general" || data.query, {
-    message: "Query is required for general text summarization",
-    path: ["query"],
-  });
+const schema = z.object({
+  file: z
+    .instanceof(File)
+    .refine(
+      (file) =>
+        file.type === "application/epub+zip" || file.type === "text/plain",
+      {
+        message: "Only EPUB and text files are allowed",
+      }
+    ),
+  type: z.enum(["book"]),
+  stopUntilChapter: z.string().optional(),
+});
 
 type FormData = z.infer<typeof schema>;
 
@@ -92,13 +85,7 @@ function App() {
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<FormData>({
+  const { handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
@@ -180,7 +167,7 @@ function App() {
         );
       } else {
         const text = await data.file.text();
-        setSummary(await summarizeText(text, data.query || "", apiKey));
+        setSummary(await summarizeText(text, "", apiKey));
       }
     } catch (err) {
       setError(
@@ -280,37 +267,19 @@ function App() {
                 <Label>Summarization Type</Label>
                 <Select
                   onValueChange={(value) =>
-                    setValue("type", value as "book" | "general")
+                    setValue("type", value as "book")
                   }
-                  defaultValue="general"
+                  defaultValue="book"
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="general">General text</SelectItem>
                     <SelectItem value="book">
                       Summarize to resume reading a book
                     </SelectItem>
                   </SelectContent>
                 </Select>
-
-                {watch("type") === "general" && (
-                  <>
-                    <Label htmlFor="query">Query</Label>
-                    <Textarea
-                      id="query"
-                      {...register("query")}
-                      rows={3}
-                      placeholder="Enter your query for summarization..."
-                    />
-                    {errors.query && (
-                      <p className="text-sm text-destructive">
-                        {errors.query.message}
-                      </p>
-                    )}
-                  </>
-                )}
               </div>
 
               {showChapterSelect && (
