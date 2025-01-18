@@ -1,59 +1,26 @@
-import { useState, useEffect } from "react";
-import { summarizeText } from "./api/summarize";
-import { ProgressiveSummarizer } from "./api/progressiveSummarizer";
-import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
   CardFooter,
+  CardHeader,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Progress } from "@/components/ui/progress";
-import { Settings, FileInput, Sun, Moon } from "lucide-react";
+import { useState } from "react";
+import { ProgressiveSummarizer } from "./api/progressiveSummarizer";
+import { summarizeText } from "./api/summarize";
+import { ProgressIndicator } from "./components/Progress/ProgressIndicator";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SettingsDialog,
+} from "./components/Settings/SettingsDialog";
+import { useApiKey } from "./components/Settings/useApiKey";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  SummaryForm,
+  SummaryFormData,
+} from "./components/SummaryForm/SummaryForm";
+import { SummaryResults } from "./components/SummaryResults/SummaryResults";
+import { ThemeToggle } from "./components/Theme/ThemeToggle";
+import { Settings } from "lucide-react";
 
-const schema = z.object({
-  file: z
-    .instanceof(File)
-    .refine(
-      (file) =>
-        file.type === "application/epub+zip" || file.type === "text/plain",
-      {
-        message: "Only EPUB and text files are allowed",
-      }
-    ),
-  type: z.enum(["book"]),
-  stopUntilChapter: z.string().optional(),
-});
-
-type FormData = z.infer<typeof schema>;
-
-function App() {
+const App = () => {
   const [summary, setSummary] = useState<string | null>(null);
   const [chapterSummaries, setChapterSummaries] = useState<
     Array<{ chapter: string; summary: string }>
@@ -65,52 +32,8 @@ function App() {
   const [convertedChapters, setConvertedChapters] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(0);
-  const [apiKey, setApiKey] = useState(() => {
-    const savedApiKey = localStorage.getItem("text-summarizer-api-key");
-    return savedApiKey || "";
-  });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const THEME_KEY = "text-summarizer-theme";
-  const API_KEY = "text-summarizer-api-key";
-
-  const {
-    handleSubmit,
-    setValue,
-    control,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      type: "book",
-    },
-  });
-
-  const resetState = () => {
-    setConvertedChapters([]);
-    setSummary(null);
-    setChapterSummaries([]);
-    setIsLoading(false);
-    setIsConverting(false);
-    setShowChapterSelect(false);
-    setTocChapters([]);
-    setError("");
-    setProgress(0);
-    setValue("stopUntilChapter", "");
-  };
-
-  useEffect(() => {
-    localStorage.setItem(API_KEY, apiKey);
-  }, [apiKey]);
-
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    const savedTheme = localStorage.getItem(THEME_KEY);
-    return savedTheme === "dark" ? "dark" : "light";
-  });
-
-  useEffect(() => {
-    localStorage.setItem(THEME_KEY, theme);
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
+  const { apiKey, setApiKey } = useApiKey();
 
   const convertEpubToChapters = async (
     file: File
@@ -140,7 +63,7 @@ function App() {
     }
   };
 
-  const onSubmit = async (data: FormData) => {
+  const handleSubmit = async (data: SummaryFormData) => {
     if (!apiKey) {
       setError("Please set your OpenAI API key in settings");
       return;
@@ -203,149 +126,52 @@ function App() {
     }
   };
 
+  const resetState = () => {
+    setConvertedChapters([]);
+    setSummary(null);
+    setChapterSummaries([]);
+    setIsLoading(false);
+    setIsConverting(false);
+    setShowChapterSelect(false);
+    setTocChapters([]);
+    setError("");
+    setProgress(0);
+  };
+
   return (
-    <div className={`min-h-screen bg-background ${theme}`}>
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <Card className="max-w-3xl mx-auto">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-2xl font-bold">
-              Text Summarizer
-            </CardTitle>
+            <h1 className="text-2xl font-bold">Text Summarizer</h1>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Sun className="h-4 w-4" />
-                <Switch
-                  checked={theme === "dark"}
-                  onCheckedChange={(checked) =>
-                    setTheme(checked ? "dark" : "light")
-                  }
-                  aria-label="Toggle theme"
-                />
-                <Moon className="h-4 w-4" />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
+              <ThemeToggle />
+              <button
                 onClick={() => setIsSettingsOpen(true)}
                 aria-label="Settings"
               >
                 <Settings className="h-5 w-5" />
-              </Button>
+              </button>
             </div>
           </CardHeader>
 
-          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Settings</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="api-key">OpenAI API Key</Label>
-                  <Input
-                    id="api-key"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Enter your OpenAI API key"
-                  />
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <SettingsDialog
+            open={isSettingsOpen}
+            onOpenChange={setIsSettingsOpen}
+            apiKey={apiKey}
+            setApiKey={setApiKey}
+          />
 
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="file">Upload Document</Label>
-                <div className="flex items-center gap-2">
-                  <FileInput className="h-5 w-5" />
-                  <Input
-                    id="file"
-                    type="file"
-                    className="w-full"
-                    onChange={(e) => {
-                      const files = e.target.files;
-                      if (files && files.length > 0) {
-                        setValue("file", files[0]);
-                        resetState();
-                      }
-                    }}
-                  />
-                </div>
-                {errors.file && (
-                  <p className="text-sm text-destructive">
-                    {errors.file.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Summarization Type</Label>
-                <Controller
-                  name="type"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      defaultValue="book"
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="book">
-                          Summarize to resume reading a book
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-
-              {showChapterSelect && (
-                <div className="space-y-2">
-                  <Label>
-                    Up until which chapter do you want to summarize (inclusive)?
-                  </Label>
-                  <Controller
-                    name="stopUntilChapter"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a chapter" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tocChapters.map((chapter, index) => (
-                            <SelectItem key={index} value={chapter}>
-                              {chapter}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                disabled={isLoading || isConverting}
-                className="w-full"
-              >
-                {isConverting
-                  ? "Converting EPUB..."
-                  : isLoading
-                  ? "Generating Summary..."
-                  : showChapterSelect
-                  ? "Continue"
-                  : "Generate Summary"}
-              </Button>
-            </form>
+            <SummaryForm
+              onSubmit={handleSubmit}
+              errors={{ file: { message: error } }}
+              showChapterSelect={showChapterSelect}
+              tocChapters={tocChapters}
+              isLoading={isLoading}
+              isConverting={isConverting}
+              onFileChange={resetState}
+            />
           </CardContent>
 
           {error && (
@@ -355,48 +181,23 @@ function App() {
           )}
 
           {(isLoading || isConverting) && (
-            <CardContent className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Summarizing chapters...</span>
-                <span>{Math.round(progress * 100)}%</span>
-              </div>
-              <Progress value={progress * 100} className="h-2" />
+            <CardContent>
+              <ProgressIndicator
+                progress={progress}
+                label="Summarizing chapters..."
+              />
             </CardContent>
           )}
 
           {summary && (
             <CardContent>
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Chapter Summaries</h2>
-                <div className="space-y-2">
-                  <Accordion
-                    type="single"
-                    collapsible
-                    defaultValue={`item-${chapterSummaries.length - 1}`}
-                  >
-                    {chapterSummaries.map((chapter, index) => (
-                      <AccordionItem key={index} value={`item-${index}`}>
-                        <AccordionTrigger className="px-4 hover:no-underline">
-                          <CardTitle className="text-lg">
-                            {chapter.chapter}
-                          </CardTitle>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-4">
-                          <p className="text-muted-foreground whitespace-pre-wrap">
-                            {chapter.summary}
-                          </p>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </div>
-              </div>
+              <SummaryResults chapterSummaries={chapterSummaries} />
             </CardContent>
           )}
         </Card>
       </div>
     </div>
   );
-}
+};
 
 export default App;
