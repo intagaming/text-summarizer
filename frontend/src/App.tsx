@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
 import { Settings, FileInput, Sun, Moon } from "lucide-react";
 import {
   Select,
@@ -70,6 +71,7 @@ function App() {
   const [tocChapters, setTocChapters] = useState<string[]>([]);
   const [convertedChapters, setConvertedChapters] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [progress, setProgress] = useState(0);
   const [apiKey, setApiKey] = useState(() => {
     const savedApiKey = localStorage.getItem("text-summarizer-api-key");
     return savedApiKey || "";
@@ -100,7 +102,9 @@ function App() {
     resolver: zodResolver(schema),
   });
 
-  const convertEpubToChapters = async (file: File): Promise<{ chapters: string[]; toc: string[] }> => {
+  const convertEpubToChapters = async (
+    file: File
+  ): Promise<{ chapters: string[]; toc: string[] }> => {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -135,6 +139,7 @@ function App() {
     setIsLoading(true);
     setError("");
     setSummary(null);
+    setProgress(0);
 
     try {
       if (data.file.type === "application/epub+zip") {
@@ -144,7 +149,7 @@ function App() {
           setConvertedChapters(chapters);
           setTocChapters(toc);
           setIsConverting(false);
-          
+
           if (!data.stopUntilChapter) {
             setShowChapterSelect(true);
             return;
@@ -157,7 +162,17 @@ function App() {
           data.stopUntilChapter || "",
           tocChapters
         );
-        setSummary(await summarizer.summarizeChapters());
+
+        // Update progress as chapters are summarized
+        const interval = setInterval(() => {
+          setProgress(summarizer.getProgress());
+        }, 500);
+
+        const summary = await summarizer.summarizeChapters();
+        clearInterval(interval);
+        setProgress(1);
+
+        setSummary(summary);
         setChapterSummaries(
           summarizer
             .getChapterSummaries()
@@ -292,7 +307,9 @@ function App() {
 
               {showChapterSelect && (
                 <div className="space-y-2">
-                  <Label>Select Chapter</Label>
+                  <Label>
+                    Up until which chapter do you want to summarize (inclusive)?
+                  </Label>
                   <Select
                     onValueChange={(value) => {
                       setValue("stopUntilChapter", value);
@@ -332,6 +349,16 @@ function App() {
             <CardFooter className="text-destructive text-sm">
               {error}
             </CardFooter>
+          )}
+
+          {(isLoading || isConverting) && (
+            <CardContent className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Summarizing chapters...</span>
+                <span>{Math.round(progress * 100)}%</span>
+              </div>
+              <Progress value={progress * 100} className="h-2" />
+            </CardContent>
           )}
 
           {summary && (
