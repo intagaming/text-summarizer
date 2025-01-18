@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/rs/cors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -23,12 +24,21 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Register handlers with logging and recovery middleware
-	mux.Handle("/convertEpubToMd", loggingMiddleware(recoveryMiddleware(http.HandlerFunc(handlers.ConvertEpubToMdHandler))))
+	mux.Handle("/convertEpubToHtml", loggingMiddleware(recoveryMiddleware(http.HandlerFunc(handlers.ConvertEpubToHtmlHandler))))
+
+	// Configure CORS
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173"}, // Allow frontend origin
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+		Debug:            false,
+	})
 
 	// Create server with timeouts
 	srv := &http.Server{
 		Addr:         ":8080",
-		Handler:      mux,
+		Handler:      corsMiddleware.Handler(mux),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,

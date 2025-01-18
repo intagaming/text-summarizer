@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func ConvertEpubToMdHandler(w http.ResponseWriter, r *http.Request) {
+func ConvertEpubToHtmlHandler(w http.ResponseWriter, r *http.Request) {
 	// Set maximum upload size
 	const maxUploadSize = 10 << 20 // 10 MB
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
@@ -51,9 +51,9 @@ func ConvertEpubToMdHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert EPUB to Markdown using Pandoc
+	// Convert EPUB to HTML using Pandoc
 	var out bytes.Buffer
-	cmd := exec.Command("pandoc", "-f", "epub", "-t", "markdown", tempFile.Name())
+	cmd := exec.Command("pandoc", "-f", "epub", "-t", "html", tempFile.Name())
 	cmd.Stdout = &out
 	cmd.Stderr = os.Stderr
 
@@ -64,7 +64,7 @@ func ConvertEpubToMdHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return converted content
-	w.Header().Set("Content-Type", "text/markdown")
+	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	w.Write(out.Bytes())
 }

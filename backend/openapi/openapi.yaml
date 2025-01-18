@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: EPUB to Markdown Conversion API
+  title: EPUB to HTML Conversion API
   version: 1.0.0
-  description: API for converting EPUB files to Markdown format
+  description: API for converting EPUB files to HTML format
   license:
     name: MIT
 
@@ -11,11 +11,11 @@ servers:
     description: Development server
 
 paths:
-  /convertEpubToMd:
+  /convertEpubToHtml:
     post:
-      summary: Convert EPUB file to Markdown
-      description: Accepts an EPUB file and returns its Markdown conversion
-      operationId: convertEpubToMd
+      summary: Convert EPUB file to HTML
+      description: Accepts an EPUB file and returns its HTML conversion
+      operationId: convertEpubToHtml
       requestBody:
         content:
           multipart/form-data:
@@ -30,12 +30,12 @@ paths:
         '200':
           description: Successful conversion
           content:
-            text/markdown:
+            text/html:
               schema:
                 type: string
               example: |
-                # Chapter 1
-                This is the converted markdown content...
+                <h1>Chapter 1</h1>
+                <p>This is the converted HTML content...</p>
         '400':
           description: Bad request (invalid file type or size)
           content:

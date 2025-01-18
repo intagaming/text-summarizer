@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConvertEpubToMdHandler(t *testing.T) {
+func TestConvertEpubToHtmlHandler(t *testing.T) {
 	tests := []struct {
 		name           string
 		filePath       string
@@ -58,21 +58,21 @@ func TestConvertEpubToMdHandler(t *testing.T) {
 			writer.Close()
 
 			// Create request
-			req := httptest.NewRequest("POST", "/convertEpubToMd", body)
+			req := httptest.NewRequest("POST", "/convertEpubToHtml", body)
 			req.Header.Set("Content-Type", writer.FormDataContentType())
 
 			// Create response recorder
 			rr := httptest.NewRecorder()
 
 			// Call handler
-			ConvertEpubToMdHandler(rr, req)
+			ConvertEpubToHtmlHandler(rr, req)
 
 			// Check status code
 			assert.Equal(t, tt.expectedStatus, rr.Code)
 
-			// For successful conversions, check markdown content
+			// For successful conversions, check HTML content
 			if tt.expectedStatus == http.StatusOK {
-				assert.Contains(t, rr.Body.String(), "#")
+				assert.Contains(t, rr.Body.String(), "<html>")
 			}
 		})
 	}

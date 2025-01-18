@@ -24,7 +24,15 @@ import {
 } from "@/components/ui/dialog";
 
 const schema = z.object({
-  file: z.instanceof(File),
+  file: z
+    .instanceof(File)
+    .refine(
+      (file) =>
+        file.type === "application/epub+zip" || file.type === "text/plain",
+      {
+        message: "Only EPUB and text files are allowed",
+      }
+    ),
   query: z.string().min(1, "Query is required"),
 });
 
@@ -33,6 +41,7 @@ type FormData = z.infer<typeof schema>;
 function App() {
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState("");
   const [apiKey, setApiKey] = useState(() => {
     const savedApiKey = localStorage.getItem("text-summarizer-api-key");
@@ -57,10 +66,33 @@ function App() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  const convertEpubToHtml = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://localhost:8080/convertEpubToHtml", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      return await response.text();
+    } catch (err) {
+      throw new Error(
+        err instanceof Error ? err.message : "Failed to convert EPUB file"
+      );
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     if (!apiKey) {
@@ -70,9 +102,19 @@ function App() {
 
     setIsLoading(true);
     setError("");
+    setSummary(null);
 
     try {
-      const text = await data.file.text();
+      let text: string;
+
+      if (data.file.type === "application/epub+zip") {
+        setIsConverting(true);
+        text = await convertEpubToHtml(data.file);
+        setIsConverting(false);
+      } else {
+        text = await data.file.text();
+      }
+
       const summary = await summarizeText(text, data.query, apiKey);
       setSummary(summary);
     } catch (err) {
@@ -81,6 +123,7 @@ function App() {
       );
     } finally {
       setIsLoading(false);
+      setIsConverting(false);
     }
   };
 
@@ -143,8 +186,13 @@ function App() {
                   <Input
                     id="file"
                     type="file"
-                    {...register("file")}
                     className="w-full"
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (files && files.length > 0) {
+                        setValue("file", files[0]);
+                      }
+                    }}
                   />
                 </div>
                 {errors.file && (
@@ -169,8 +217,16 @@ function App() {
                 )}
               </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Generating Summary..." : "Generate Summary"}
+              <Button
+                type="submit"
+                disabled={isLoading || isConverting}
+                className="w-full"
+              >
+                {isConverting
+                  ? "Converting EPUB..."
+                  : isLoading
+                  ? "Generating Summary..."
+                  : "Generate Summary"}
               </Button>
             </form>
           </CardContent>
