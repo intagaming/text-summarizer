@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { isChapterMatch } from "../lib/utils";
 
 export async function summarizeText(
   text: string,
@@ -60,7 +61,6 @@ export async function summarizeChapter(
           content: `
 You are a book summarization assistant. Your responsibilities:
 - Identify key plot points, character developments, and important details
-- Stop after generating summary for the StopAfterChapter chapter
 - Use the provided table of contents as the source of truth for chapter names
 - Normalize chapter names/numbers to match table of contents format
 - Handle partial matches and alternative phrasings intelligently
@@ -68,7 +68,6 @@ You are a book summarization assistant. Your responsibilities:
 Inputs provided:
 - Previous chapters' summary
 - Current chapter text
-- Chapter to stop after (StopAfterChapter)
 - Table of contents
 
 If text is not a chapter (e.g., TOC, Preface), return: {"notAChapter": true}
@@ -78,8 +77,7 @@ For valid chapters, return JSON in code block:
 \`\`\`json
 {
   "chapter": "Exact chapter name from TOC",
-  "summary": "Concise chapter summary",
-  "stop": true/false (true if current chapter matches summarizeUntilChapter)
+  "summary": "Concise chapter summary"
 }
 \`\`\`
 </example>
@@ -89,8 +87,7 @@ Example:
 \`\`\`json
 {
   "chapter": "Chapter 1: The Beginning",
-  "summary": "The story begins with...",
-  "stop": false
+  "summary": "The story begins with..."
 }
 \`\`\`
 <example>
@@ -103,10 +100,6 @@ Example:
 <TableOfContents>
 ${tableOfContents.join("\n")}
 </TableOfContents>
-
-<StopAfterChapter>
-${summarizeUntilChapter}
-</StopAfterChapter>
 
 <PreviousSummary>
 ${previousSummary}
@@ -125,8 +118,7 @@ ${chapter}
 \`\`\`json
 {
   "chapter": "Exact chapter name",
-  "summary": "Your summary here",
-  "stop": true/false
+  "summary": "Your summary here"
 }
 \`\`\`
 </example>
@@ -155,10 +147,14 @@ ${chapter}
       if (parsed.notAChapter) {
         return { chapter: "", summary: "" };
       }
+
+      // Determine if we should stop based on our local matching
+      const shouldStop = isChapterMatch(parsed.chapter, summarizeUntilChapter);
+
       return {
         chapter: parsed.chapter || "",
         summary: parsed.summary || "",
-        stop: parsed.stop || false,
+        stop: shouldStop,
       };
     } catch (error) {
       throw new Error(
