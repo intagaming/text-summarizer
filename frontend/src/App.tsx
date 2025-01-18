@@ -81,7 +81,7 @@ function App() {
     resolver: zodResolver(schema),
   });
 
-  const convertEpubToChapters = async (file: File) => {
+  const convertEpubToChapters = async (file: File): Promise<string[]> => {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -98,7 +98,7 @@ function App() {
         throw new Error(await response.text());
       }
 
-      const data = await response.json();
+      const data: { chapters: string[] } = await response.json();
       return data.chapters; // Return array of chapters
     } catch (err) {
       throw new Error(
@@ -118,21 +118,17 @@ function App() {
     setSummary(null);
 
     try {
-      let text;
-
       if (data.file.type === "application/epub+zip") {
         setIsConverting(true);
-        text = await convertEpubToChapters(data.file);
+        const text = await convertEpubToChapters(data.file);
         setIsConverting(false);
+        setSummary(
+          await new ProgressiveSummarizer(text, apiKey).summarizeChapters()
+        );
       } else {
-        text = await data.file.text();
+        const text = await data.file.text();
+        setSummary(await summarizeText(text, data.query, apiKey));
       }
-
-      const summary =
-        data.file.type === "application/epub+zip"
-          ? await new ProgressiveSummarizer(text, apiKey).summarizeChapters()
-          : await summarizeText(text, data.query, apiKey);
-      setSummary(summary);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unknown error occurred"

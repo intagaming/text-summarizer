@@ -55,13 +55,35 @@ export async function summarizeChapter(
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that summarizes books to help readers quickly grasp the content.
-          Focus on identifying key plot points, character developments, and important details.
-          You will be provided the summaries of previous chapters and the full text of the chapter the reader wants to summarize.`,
+          content: `
+            You are a helpful assistant that summarizes books to help readers quickly grasp the content.
+            Your responsibilities include:
+            - Identifying key plot points
+            - Tracking character developments
+            - Highlighting important details
+            
+            You will be provided:
+            - Summaries of previous chapters
+            - Full text of the current chapter to summarize
+            
+            Answer with the summary of the current chapter.
+          `.trim(),
         },
         {
           role: "user",
-          content: `Previous chapters summary: ${previousSummary}\n\nCurrent chapter: ${chapter}\n\nPlease provide a comprehensive summary of this book chapter, including key plot points and character developments`,
+          content: `
+            ### Previous Chapters Summary
+            <previous_chapters_summary>
+            ${previousSummary}
+            </previous_chapters_summary>
+            
+            ### Current Chapter Text
+            <current_chapter_text>
+            ${chapter}
+            </current_chapter_text>
+            
+            ### Summarization of current chapter
+          `.trim(),
         },
       ],
       temperature: 0.2,
