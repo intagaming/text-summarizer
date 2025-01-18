@@ -9,9 +9,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/net/html"
 )
 
 type container struct {
@@ -224,6 +225,13 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 	var currentChapter strings.Builder
 	var inChapter bool
 
+	// Helper function to render HTML node to string
+	renderNode := func(n *html.Node) string {
+		var buf bytes.Buffer
+		html.Render(&buf, n)
+		return buf.String()
+	}
+
 	for _, itemRef := range pkg.Spine.ItemRefs {
 		item, exists := manifestMap[itemRef.IDRef]
 		if !exists {
@@ -246,7 +254,7 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Open and convert chapter
+		// Open and parse chapter HTML
 		chapterContent, err := chapterFile.Open()
 		if err != nil {
 			log.Printf("Error reading chapter file: %v\n", err)
@@ -254,45 +262,48 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer chapterContent.Close()
 
-		var out bytes.Buffer
-		cmd := exec.Command("pandoc", "-f", "html", "-t", "markdown")
-		cmd.Stdin = chapterContent
-		cmd.Stdout = &out
-		cmd.Stderr = os.Stderr
-
-		if err := cmd.Run(); err != nil {
-			log.Printf("Pandoc conversion error: %v\n", err)
+		// Parse HTML content
+		doc, err := html.Parse(chapterContent)
+		if err != nil {
+			log.Printf("Error parsing HTML: %v\n", err)
 			continue
 		}
 
-		// Process markdown content line by line
-		markdownContent := out.String()
-		lines := strings.Split(markdownContent, "\n")
-
-		for _, line := range lines {
-			// Check for chapter boundary using TOC IDs
-			if strings.HasPrefix(line, "#") {
-				// Check each TOC entry against the heading line
+		// Process HTML nodes
+		var processNode func(*html.Node)
+		processNode = func(n *html.Node) {
+			if n.Type == html.ElementNode {
+				// Check for chapter boundary using TOC IDs in any element
 				for _, tocID := range tocIDs {
-					// Look for the TOC ID in the format #{tocEntry}
-					if strings.Contains(line, "#"+tocID) {
-						// If we're already in a chapter, finalize it
-						if inChapter {
-							chapters = append(chapters, currentChapter.String())
-							currentChapter.Reset()
+					for _, attr := range n.Attr {
+						if attr.Key == "id" && attr.Val == tocID {
+							// If we're already in a chapter, finalize it
+							if inChapter {
+								chapters = append(chapters, currentChapter.String())
+								currentChapter.Reset()
+							}
+							inChapter = true
+							break
 						}
-						inChapter = true
-						break
+					}
+				}
+
+				// Collect content if we're in a chapter
+				if inChapter {
+					if n.Data == "p" || n.Data == "div" || strings.HasPrefix(n.Data, "h") {
+						currentChapter.WriteString(renderNode(n))
+						currentChapter.WriteString("\n")
 					}
 				}
 			}
 
-			// Collect content if we're in a chapter
-			if inChapter {
-				currentChapter.WriteString(line)
-				currentChapter.WriteString("\n")
+			// Process child nodes
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				processNode(c)
 			}
 		}
+
+		processNode(doc)
 	}
 
 	// Add final chapter if exists
