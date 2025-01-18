@@ -16,6 +16,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Settings, FileInput, Sun, Moon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const schema = z.object({
   file: z.instanceof(File),
@@ -29,7 +35,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const THEME_KEY = "text-summarizer-theme";
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     const savedTheme = localStorage.getItem(THEME_KEY);
@@ -93,7 +99,7 @@ function App() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setShowSettings(!showSettings)}
+                onClick={() => setIsSettingsOpen(true)}
                 aria-label="Settings"
               >
                 <Settings className="h-5 w-5" />
@@ -101,8 +107,11 @@ function App() {
             </div>
           </CardHeader>
 
-          {showSettings && (
-            <CardContent>
+          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Settings</DialogTitle>
+              </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="api-key">OpenAI API Key</Label>
@@ -114,8 +123,8 @@ function App() {
                   />
                 </div>
               </div>
-            </CardContent>
-          )}
+            </DialogContent>
+          </Dialog>
 
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
