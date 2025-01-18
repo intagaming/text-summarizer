@@ -3,7 +3,8 @@ import OpenAI from "openai";
 export async function summarizeText(
   text: string,
   query: string,
-  apiKey: string
+  apiKey: string,
+  type: "book" | "general" = "general"
 ) {
   try {
     const openai = new OpenAI({
@@ -18,7 +19,9 @@ export async function summarizeText(
         {
           role: "system",
           content:
-            "You are a helpful assistant that summarizes text based on user queries.",
+            type === "book"
+              ? "You are a helpful assistant that summarizes books to help readers resume reading. Focus on key plot points, character developments, and important details to help the reader pick up where they left off."
+              : "You are a helpful assistant that summarizes text based on user queries.",
         },
         {
           role: "user",

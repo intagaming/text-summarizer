@@ -17,6 +17,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Settings, FileInput, Sun, Moon } from "lucide-react";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -34,6 +41,7 @@ const schema = z.object({
       }
     ),
   query: z.string().min(1, "Query is required"),
+  type: z.enum(["book", "general"]),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -115,7 +123,7 @@ function App() {
         text = await data.file.text();
       }
 
-      const summary = await summarizeText(text, data.query, apiKey);
+      const summary = await summarizeText(text, data.query, apiKey, data.type);
       setSummary(summary);
     } catch (err) {
       setError(
@@ -203,6 +211,20 @@ function App() {
               </div>
 
               <div className="space-y-2">
+                <Label>Summarization Type</Label>
+                <Select
+                  {...register("type")}
+                  defaultValue="general"
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General text</SelectItem>
+                    <SelectItem value="book">Summarize to resume reading a book</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Label htmlFor="query">Query</Label>
                 <Textarea
                   id="query"
