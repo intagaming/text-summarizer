@@ -70,7 +70,14 @@ export async function summarizeChapter(
             - The chapter at which to stop summarization (summarizeUntilChapter)
             
             If the provided text is not a chapter (e.g., Table of Contents, Dedication, Preface, Acknowledgments, Index, or other non-story content), return raw JSON: {"notAChapter": true}.
-            If the current chapter matches summarizeUntilChapter, include "stop": true in the response.
+            
+            When comparing chapters, use flexible matching:
+            - Convert numbers to words (e.g., "5" → "five")
+            - Remove non-alphanumeric characters
+            - Convert to lowercase
+            - Allow for minor variations in formatting
+            
+            If the normalized current chapter matches the normalized summarizeUntilChapter, include "stop": true in the response.
             Otherwise, return raw JSON with:
             - "chapter": The chapter name/title
             - "summary": The chapter summary

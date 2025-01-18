@@ -55,7 +55,9 @@ type FormData = z.infer<typeof schema>;
 
 function App() {
   const [summary, setSummary] = useState<string | null>(null);
-  const [chapterSummaries, setChapterSummaries] = useState<Array<{chapter: string; summary: string}>>([]);
+  const [chapterSummaries, setChapterSummaries] = useState<
+    Array<{ chapter: string; summary: string }>
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState("");
@@ -136,7 +138,11 @@ function App() {
           data.stopUntilChapter || ""
         );
         setSummary(await summarizer.summarizeChapters());
-        setChapterSummaries(summarizer.getChapterSummaries());
+        setChapterSummaries(
+          summarizer
+            .getChapterSummaries()
+            .filter((s) => s.chapter !== "" || s.summary !== "")
+        );
       } else {
         const text = await data.file.text();
         setSummary(await summarizeText(text, data.query || "", apiKey));
@@ -309,7 +315,7 @@ function App() {
                     <Card key={index}>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
                         <CardTitle className="text-lg">
-                          Chapter {index + 1}: {chapter.chapter}
+                          {chapter.chapter}
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
