@@ -44,7 +44,6 @@ export async function summarizeChapter(
   apiKey: string,
   summarizeUntilChapter: string
 ) {
-  console.log(123, previousSummary, chapter);
   try {
     const openai = new OpenAI({
       apiKey: apiKey,
