@@ -213,7 +213,7 @@ function App() {
               <div className="space-y-2">
                 <Label>Summarization Type</Label>
                 <Select
-                  {...register("type")}
+                  onValueChange={(value) => setValue("type", value as "book" | "general")}
                   defaultValue="general"
                 >
                   <SelectTrigger className="w-full">

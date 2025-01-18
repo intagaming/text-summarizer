@@ -19,22 +19,23 @@ export async function summarizeText(
         {
           role: "system",
           content:
-            type === "book"
-              ? `You are a helpful assistant that summarizes books chapter by chapter to help readers resume reading.
-              Focus on key plot points, character developments, and important details for one chapter at a time.
-              Always output only one chapter summary at a time. If the user requests a specific chapter, summarize only that chapter.
-              Chapter summaries should be self-contained and not reference other chapters.`
-              : "You are a helpful assistant that summarizes text based on user queries.",
+          type === "book"
+          ? `You are a helpful assistant that skims books chapter by chapter to help readers quickly grasp the content.
+          Focus on identifying key plot points, character developments, and important details.
+          When skimming books, always quote the text verbatim without adding, omitting, or altering any words.
+          Always process one chapter at a time. If the user requests a specific chapter, skim only that chapter.
+          Skimmed content should be self-contained and not reference other chapters.`
+            : "You are a helpful assistant that skims text based on user queries.",
         },
         {
           role: "user",
           content: type === "book"
-            ? `Book Text: ${text}\n\nQuery: ${query}\n\nPlease provide a concise summary of ${query.includes("chapter") ? "the requested chapter" : "each chapter one by one"}.`
-            : `Text: ${text}\n\nQuery: ${query}\n\nPlease provide a concise summary based on the query.`,
+          ? `Book Text: ${text}\n\nQuery: ${query}\n\nPlease skim ${query.includes("chapter") ? "the requested chapter" : "each chapter one by one"}, quoting the text verbatim without adding, omitting, or altering any words.`
+          : `Text: ${text}\n\nQuery: ${query}\n\nPlease skim the text, replacing lengthy or less relevant sections with "[...]" while preserving key points and context.`,
         },
       ],
-      temperature: 0.7,
-      max_tokens: 256,
+      temperature: 0.2,
+      max_tokens: 1000,
     });
 
     return completion.choices[0].message.content;
