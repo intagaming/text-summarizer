@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { summarizeText } from "./api/summarize";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Settings, FileInput } from "lucide-react";
+import { Settings, FileInput, Sun, Moon } from "lucide-react";
 
 const schema = z.object({
   file: z.instanceof(File),
@@ -30,7 +30,15 @@ function App() {
   const [error, setError] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [showSettings, setShowSettings] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const THEME_KEY = "text-summarizer-theme";
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    const savedTheme = localStorage.getItem(THEME_KEY);
+    return savedTheme === "dark" ? "dark" : "light";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
   const {
     register,
@@ -71,13 +79,17 @@ function App() {
               Text Summarizer
             </CardTitle>
             <div className="flex items-center gap-4">
-              <Switch
-                checked={theme === "dark"}
-                onCheckedChange={(checked) =>
-                  setTheme(checked ? "dark" : "light")
-                }
-                aria-label="Toggle theme"
-              />
+              <div className="flex items-center gap-2">
+                <Sun className="h-4 w-4" />
+                <Switch
+                  checked={theme === "dark"}
+                  onCheckedChange={(checked) =>
+                    setTheme(checked ? "dark" : "light")
+                  }
+                  aria-label="Toggle theme"
+                />
+                <Moon className="h-4 w-4" />
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
