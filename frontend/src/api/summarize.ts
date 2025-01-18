@@ -52,7 +52,7 @@ export async function summarizeChapter(
     });
 
     const completion = await openai.chat.completions.create({
-      model: "google/gemini-flash-1.5-8b",
+      model: "mistralai/mistral-nemo",
       messages: [
         {
           role: "system",
@@ -99,6 +99,11 @@ export async function summarizeChapter(
         {
           role: "user",
           content: `
+            ### Stop After Chapter
+            <stop_after_chapter>
+            ${summarizeUntilChapter}
+            </stop_after_chapter>
+
             ### Previous Chapters Summary
             <previous_chapters_summary>
             ${previousSummary}
@@ -109,12 +114,9 @@ export async function summarizeChapter(
             ${chapter}
             </current_chapter_text>
             
-            ### Stop After Chapter
-            <stop_after_chapter>
-            ${summarizeUntilChapter}
-            </stop_after_chapter>
-            
             ### Summarization of current chapter
+            
+            Here is the summarization of the current chapter, adhering to the requirements:
           `.trim(),
         },
       ],
