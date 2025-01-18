@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { summarizeText } from "./api/summarize";
 import { ProgressiveSummarizer } from "./api/progressiveSummarizer";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -73,9 +73,22 @@ function App() {
   const THEME_KEY = "text-summarizer-theme";
   const API_KEY = "text-summarizer-api-key";
 
+  const {
+    handleSubmit,
+    setValue,
+    control,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      type: "book",
+    },
+  });
+
   useEffect(() => {
     localStorage.setItem(API_KEY, apiKey);
   }, [apiKey]);
+
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     const savedTheme = localStorage.getItem(THEME_KEY);
     return savedTheme === "dark" ? "dark" : "light";
@@ -83,11 +96,8 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem(THEME_KEY, theme);
+    document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
-
-  const { handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  });
 
   const convertEpubToChapters = async (
     file: File
@@ -150,7 +160,6 @@ function App() {
           tocChapters
         );
 
-        // Update progress as chapters are summarized
         const interval = setInterval(() => {
           setProgress(summarizer.getProgress());
         }, 500);
@@ -265,21 +274,26 @@ function App() {
 
               <div className="space-y-2">
                 <Label>Summarization Type</Label>
-                <Select
-                  onValueChange={(value) =>
-                    setValue("type", value as "book")
-                  }
-                  defaultValue="book"
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="book">
-                      Summarize to resume reading a book
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      defaultValue="book"
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="book">
+                          Summarize to resume reading a book
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               {showChapterSelect && (
@@ -287,22 +301,27 @@ function App() {
                   <Label>
                     Up until which chapter do you want to summarize (inclusive)?
                   </Label>
-                  <Select
-                    onValueChange={(value) => {
-                      setValue("stopUntilChapter", value);
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a chapter" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tocChapters.map((chapter, index) => (
-                        <SelectItem key={index} value={chapter}>
-                          {chapter}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="stopUntilChapter"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a chapter" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tocChapters.map((chapter, index) => (
+                            <SelectItem key={index} value={chapter}>
+                              {chapter}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               )}
 
