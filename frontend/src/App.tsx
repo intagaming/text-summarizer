@@ -95,6 +95,7 @@ function App() {
     setTocChapters([]);
     setError("");
     setProgress(0);
+    setValue("stopUntilChapter", "");
   };
 
   useEffect(() => {
@@ -152,9 +153,11 @@ function App() {
 
     try {
       if (data.file.type === "application/epub+zip") {
+        let localConvertedChapters = convertedChapters;
         if (!convertedChapters.length) {
           setIsConverting(true);
           const { chapters, toc } = await convertEpubToChapters(data.file);
+          localConvertedChapters = chapters;
           setConvertedChapters(chapters);
           setTocChapters(toc);
           setIsConverting(false);
@@ -166,7 +169,7 @@ function App() {
         }
 
         const summarizer = new ProgressiveSummarizer(
-          convertedChapters,
+          localConvertedChapters,
           apiKey,
           data.stopUntilChapter || "",
           tocChapters
