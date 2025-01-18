@@ -195,6 +195,7 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var tableOfContents []string
+	var tocIDs []string
 	if tocFile != nil {
 		tocContent, err := tocFile.Open()
 		if err != nil {
@@ -208,6 +209,11 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 			} else {
 				for _, entry := range tocXML.NavPoints {
 					tableOfContents = append(tableOfContents, entry.Text)
+					// Extract ID from content.Src (format: file#id)
+					if idStart := strings.Index(entry.Content.Src, "#"); idStart > 0 {
+						id := entry.Content.Src[idStart+1:]
+						tocIDs = append(tocIDs, id)
+					}
 				}
 			}
 		}
@@ -215,6 +221,9 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Process each chapter in spine
 	var chapters []string
+	var currentChapter strings.Builder
+	var inChapter bool
+
 	for _, itemRef := range pkg.Spine.ItemRefs {
 		item, exists := manifestMap[itemRef.IDRef]
 		if !exists {
@@ -256,7 +265,39 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		chapters = append(chapters, out.String())
+		// Process markdown content line by line
+		markdownContent := out.String()
+		lines := strings.Split(markdownContent, "\n")
+
+		for _, line := range lines {
+			// Check for chapter boundary using TOC IDs
+			if strings.HasPrefix(line, "#") {
+				// Check each TOC entry against the heading line
+				for _, tocID := range tocIDs {
+					// Look for the TOC ID in the format #{tocEntry}
+					if strings.Contains(line, "#"+tocID) {
+						// If we're already in a chapter, finalize it
+						if inChapter {
+							chapters = append(chapters, currentChapter.String())
+							currentChapter.Reset()
+						}
+						inChapter = true
+						break
+					}
+				}
+			}
+
+			// Collect content if we're in a chapter
+			if inChapter {
+				currentChapter.WriteString(line)
+				currentChapter.WriteString("\n")
+			}
+		}
+	}
+
+	// Add final chapter if exists
+	if inChapter {
+		chapters = append(chapters, currentChapter.String())
 	}
 
 	// Return chapters as JSON response
