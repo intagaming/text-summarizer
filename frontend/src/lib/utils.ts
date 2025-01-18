@@ -43,5 +43,5 @@ export function calculateStringSimilarity(str1: string, str2: string): number {
 
 export function isChapterMatch(chapter: string, target: string): boolean {
   const similarity = calculateStringSimilarity(chapter, target)
-  return similarity >= 0.7
+  return similarity >= 0.98
 }
