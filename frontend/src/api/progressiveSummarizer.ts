@@ -15,7 +15,7 @@ export class ProgressiveSummarizer {
 
   async summarizeNextChapter(): Promise<{ summary: string; done: boolean }> {
     if (this.currentChapter >= this.chapters.length) {
-      return { summary: this.previousSummary, done: true };
+      throw new Error("All chapters have been summarized");
     }
 
     const chapterText = this.chapters[this.currentChapter];
@@ -43,5 +43,12 @@ export class ProgressiveSummarizer {
     return this.chapters.length > 0
       ? this.currentChapter / this.chapters.length
       : 0;
+  }
+
+  async summarizeChapters(): Promise<string> {
+    while (!(await this.summarizeNextChapter()).done) {
+      // Continue summarizing until done
+    }
+    return this.previousSummary;
   }
 }

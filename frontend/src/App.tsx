@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { summarizeText, summarizeChapter } from "./api/summarize";
+import { summarizeText } from "./api/summarize";
+import { ProgressiveSummarizer } from "./api/progressiveSummarizer";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -117,7 +118,7 @@ function App() {
     setSummary(null);
 
     try {
-      let text: string;
+      let text;
 
       if (data.file.type === "application/epub+zip") {
         setIsConverting(true);
@@ -127,9 +128,10 @@ function App() {
         text = await data.file.text();
       }
 
-      const summary = data.file.type === "application/epub+zip"
-        ? await summarizeChapter(text, data.query, apiKey)
-        : await summarizeText(text, data.query, apiKey);
+      const summary =
+        data.file.type === "application/epub+zip"
+          ? await new ProgressiveSummarizer(text, apiKey).summarizeChapters()
+          : await summarizeText(text, data.query, apiKey);
       setSummary(summary);
     } catch (err) {
       setError(
