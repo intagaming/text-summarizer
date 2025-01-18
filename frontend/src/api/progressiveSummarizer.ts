@@ -6,6 +6,7 @@ export class ProgressiveSummarizer {
   private previousSummary: string;
   private apiKey: string;
   private stopUntilChapter: string;
+  private chapterSummaries: Array<{chapter: string; summary: string}>;
 
   constructor(chapters: string[], apiKey: string, stopUntilChapter: string) {
     this.chapters = chapters;
@@ -13,6 +14,7 @@ export class ProgressiveSummarizer {
     this.previousSummary = "";
     this.apiKey = apiKey;
     this.stopUntilChapter = stopUntilChapter;
+    this.chapterSummaries = [];
   }
 
   async summarizeNextChapter(): Promise<{ chapter: string; summary: string; done: boolean }> {
@@ -29,6 +31,7 @@ export class ProgressiveSummarizer {
       this.stopUntilChapter
     );
 
+    this.chapterSummaries.push({chapter, summary});
     this.previousSummary = `${this.previousSummary}\n\n${chapter}\n${summary}`.trim();
     this.currentChapter++;
 
@@ -37,6 +40,10 @@ export class ProgressiveSummarizer {
       summary: summary || "",
       done: stop || this.currentChapter >= this.chapters.length,
     };
+  }
+
+  getChapterSummaries(): Array<{chapter: string; summary: string}> {
+    return this.chapterSummaries;
   }
 
   getProgress(): number {

@@ -55,6 +55,7 @@ type FormData = z.infer<typeof schema>;
 
 function App() {
   const [summary, setSummary] = useState<string | null>(null);
+  const [chapterSummaries, setChapterSummaries] = useState<Array<{chapter: string; summary: string}>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState("");
@@ -129,13 +130,13 @@ function App() {
         setIsConverting(true);
         const text = await convertEpubToChapters(data.file);
         setIsConverting(false);
-        setSummary(
-          await new ProgressiveSummarizer(
-            text,
-            apiKey,
-            data.stopUntilChapter || ""
-          ).summarizeChapters()
+        const summarizer = new ProgressiveSummarizer(
+          text,
+          apiKey,
+          data.stopUntilChapter || ""
         );
+        setSummary(await summarizer.summarizeChapters());
+        setChapterSummaries(summarizer.getChapterSummaries());
       } else {
         const text = await data.file.text();
         setSummary(await summarizeText(text, data.query || "", apiKey));
@@ -302,10 +303,23 @@ function App() {
           {summary && (
             <CardContent>
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Summary</h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">
-                  {summary}
-                </p>
+                <h2 className="text-xl font-semibold">Chapter Summaries</h2>
+                <div className="space-y-2">
+                  {chapterSummaries.map((chapter, index) => (
+                    <Card key={index}>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
+                        <CardTitle className="text-lg">
+                          Chapter {index + 1}: {chapter.chapter}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <p className="text-muted-foreground whitespace-pre-wrap">
+                          {chapter.summary}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             </CardContent>
           )}
