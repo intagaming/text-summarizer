@@ -97,7 +97,7 @@ function App() {
     resolver: zodResolver(schema),
   });
 
-  const convertEpubToChapters = async (file: File): Promise<string[]> => {
+  const convertEpubToChapters = async (file: File): Promise<{ chapters: string[]; toc: string[] }> => {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -114,8 +114,8 @@ function App() {
         throw new Error(await response.text());
       }
 
-      const data: { chapters: string[] } = await response.json();
-      return data.chapters; // Return array of chapters
+      const data: { chapters: string[]; toc: string[] } = await response.json();
+      return data; // Return chapters and table of contents
     } catch (err) {
       throw new Error(
         err instanceof Error ? err.message : "Failed to convert EPUB file"
@@ -136,12 +136,13 @@ function App() {
     try {
       if (data.file.type === "application/epub+zip") {
         setIsConverting(true);
-        const text = await convertEpubToChapters(data.file);
+        const { chapters, toc } = await convertEpubToChapters(data.file);
         setIsConverting(false);
         const summarizer = new ProgressiveSummarizer(
-          text,
+          chapters,
           apiKey,
-          data.stopUntilChapter || ""
+          data.stopUntilChapter || "",
+          toc
         );
         setSummary(await summarizer.summarizeChapters());
         setChapterSummaries(

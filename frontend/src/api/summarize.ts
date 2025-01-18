@@ -42,7 +42,8 @@ export async function summarizeChapter(
   previousSummary: string,
   chapter: string,
   apiKey: string,
-  summarizeUntilChapter: string
+  summarizeUntilChapter: string,
+  tableOfContents: string[]
 ) {
   try {
     const openai = new OpenAI({
@@ -68,8 +69,16 @@ export async function summarizeChapter(
             - Summaries of previous chapters
             - Full text of the current chapter to summarize
             - The chapter at which to stop summarization (summarizeUntilChapter)
+            - A table of contents with official chapter names
             
             If the provided text is not a chapter (e.g., Table of Contents, Dedication, Preface, Acknowledgments, Index, or other non-story content), return raw JSON: {"notAChapter": true}.
+            
+            When identifying chapter names:
+            - Use the provided table of contents as the source of truth for chapter names
+            - If the detected chapter name differs slightly from the table of contents, correct it to the closest matching name
+            - Ensure the returned chapter name exactly matches one from the table of contents
+            - For chapter numbers, normalize them to match the table of contents format
+            - Handle partial matches by selecting the most similar chapter name from the table of contents
             
             When comparing chapters, focus on understanding the semantic meaning rather than exact text matching:
             - Consider synonyms and alternative phrasings
@@ -83,7 +92,7 @@ export async function summarizeChapter(
             
             If the normalized current chapter matches the normalized summarizeUntilChapter, include "stop": true in the response.
             Otherwise, return raw JSON with:
-            - "chapter": The chapter name/title
+            - "chapter": The chapter name/title (must exactly match one from the table of contents)
             - "summary": The chapter summary
             - "stop": boolean (true if this is the last chapter to summarize)
             Always return JSON in a code block that starts with "\`\`\`json" and ends with "\`\`\`".
@@ -103,24 +112,31 @@ export async function summarizeChapter(
         {
           role: "user",
           content: `
-            ### Stop After Chapter
-            <stop_after_chapter>
-            ${summarizeUntilChapter}
-            </stop_after_chapter>
+          ### Table of Contents
+          <table_of_contents>
+          ${tableOfContents.join('\n')}
+          </table_of_contents>
 
-            ### Previous Chapters Summary
-            <previous_chapters_summary>
-            ${previousSummary}
-            </previous_chapters_summary>
-            
-            ### Current Chapter Text
-            <current_chapter_text>
-            ${chapter}
-            </current_chapter_text>
-            
-            ### Summarization of current chapter
-            
-            Here is the summarization of the current chapter, adhering to the requirements:
+          ### Stop After Chapter
+          <stop_after_chapter>
+          ${summarizeUntilChapter}
+          </stop_after_chapter>
+
+          ### Previous Chapters Summary
+          <previous_chapters_summary>
+          ${previousSummary}
+          </previous_chapters_summary>
+          
+          ### Current Chapter Text
+          <current_chapter_text>
+          ${chapter}
+          </current_chapter_text>
+          
+          ### Summarization of current chapter
+          
+          Here is the summarization of the current chapter, adhering to the requirements:
+          - Use the provided table of contents for chapter name matching
+          - Ensure the chapter name matches exactly with one from the table of contents
           `.trim(),
         },
       ],
