@@ -54,7 +54,7 @@ export async function summarizeChapter(
     });
 
     const completion = await openai.chat.completions.create({
-      model: "google/gemini-flash-1.5",
+      model: "google/gemini-flash-1.5-8b",
       messages: [
         {
           role: "system",
