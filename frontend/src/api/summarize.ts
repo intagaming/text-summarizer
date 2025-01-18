@@ -58,78 +58,78 @@ export async function summarizeChapter(
         {
           role: "system",
           content: `
-            You are a book summarization assistant. Your responsibilities:
-            - Identify key plot points, character developments, and important details
-            - Stop after generating summary for the StopAfterChapter chapter
-            - Use the provided table of contents as the source of truth for chapter names
-            - Normalize chapter names/numbers to match table of contents format
-            - Handle partial matches and alternative phrasings intelligently
+You are a book summarization assistant. Your responsibilities:
+- Identify key plot points, character developments, and important details
+- Stop after generating summary for the StopAfterChapter chapter
+- Use the provided table of contents as the source of truth for chapter names
+- Normalize chapter names/numbers to match table of contents format
+- Handle partial matches and alternative phrasings intelligently
 
-            Inputs provided:
-            - Previous chapters' summary
-            - Current chapter text
-            - Chapter to stop after (StopAfterChapter)
-            - Table of contents
+Inputs provided:
+- Previous chapters' summary
+- Current chapter text
+- Chapter to stop after (StopAfterChapter)
+- Table of contents
 
-            If text is not a chapter (e.g., TOC, Preface), return: {"notAChapter": true}
+If text is not a chapter (e.g., TOC, Preface), return: {"notAChapter": true}
 
-            For valid chapters, return JSON in code block:
-            <example>
-            \`\`\`json
-            {
-              "chapter": "Exact chapter name from TOC",
-              "summary": "Concise chapter summary",
-              "stop": true/false (true if current chapter matches summarizeUntilChapter)
-            }
-            \`\`\`
-            </example>
+For valid chapters, return JSON in code block:
+<example>
+\`\`\`json
+{
+  "chapter": "Exact chapter name from TOC",
+  "summary": "Concise chapter summary",
+  "stop": true/false (true if current chapter matches summarizeUntilChapter)
+}
+\`\`\`
+</example>
 
-            Example:
-            <example>
-            \`\`\`json
-            {
-              "chapter": "Chapter 1: The Beginning",
-              "summary": "The story begins with...",
-              "stop": false
-            }
-            \`\`\`
-            <example>
+Example:
+<example>
+\`\`\`json
+{
+  "chapter": "Chapter 1: The Beginning",
+  "summary": "The story begins with...",
+  "stop": false
+}
+\`\`\`
+<example>
           `.trim(),
         },
         {
           role: "user",
           content: `
-          ### Input Data
-          <TableOfContents>
-          ${tableOfContents.join("\n")}
-          </TableOfContents>
+### Input Data
+<TableOfContents>
+${tableOfContents.join("\n")}
+</TableOfContents>
 
-          <StopAfterChapter>
-          ${summarizeUntilChapter}
-          </StopAfterChapter>
+<StopAfterChapter>
+${summarizeUntilChapter}
+</StopAfterChapter>
 
-          <PreviousSummary>
-          ${previousSummary}
-          </PreviousSummary>
+<PreviousSummary>
+${previousSummary}
+</PreviousSummary>
 
-          <CurrentChapter>
-          ${chapter}
-          </CurrentChapter>
+<CurrentChapter>
+${chapter}
+</CurrentChapter>
 
-          ### Instructions
-          1. Generate a concise summary (150-300 words) of the current chapter
-          2. Maintain narrative flow and key plot points
-          3. Use exact chapter names from TableOfContents
-          4. Return JSON in code block:
-          <example>
-          \`\`\`json
-          {
-            "chapter": "Exact chapter name",
-            "summary": "Your summary here",
-            "stop": true/false
-          }
-          \`\`\`
-          </example>
+### Instructions
+1. Generate a concise summary (150-300 words) of the current chapter
+2. Maintain narrative flow and key plot points
+3. Use exact chapter names from TableOfContents
+4. Return JSON in code block:
+<example>
+\`\`\`json
+{
+  "chapter": "Exact chapter name",
+  "summary": "Your summary here",
+  "stop": true/false
+}
+\`\`\`
+</example>
           `.trim(),
         },
       ],
