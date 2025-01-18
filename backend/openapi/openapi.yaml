@@ -1,0 +1,63 @@
+openapi: 3.0.0
+info:
+  title: EPUB to Markdown Conversion API
+  version: 1.0.0
+  description: API for converting EPUB files to Markdown format
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+paths:
+  /convertEpubToMd:
+    post:
+      summary: Convert EPUB file to Markdown
+      description: Accepts an EPUB file and returns its Markdown conversion
+      operationId: convertEpubToMd
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: EPUB file to convert
+      responses:
+        '200':
+          description: Successful conversion
+          content:
+            text/markdown:
+              schema:
+                type: string
+              example: |
+                # Chapter 1
+                This is the converted markdown content...
+        '400':
+          description: Bad request (invalid file type or size)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+      required:
+        - error
+      example:
+        error: "Invalid file type, only .epub files are allowed"
