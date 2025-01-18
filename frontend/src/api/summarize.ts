@@ -71,11 +71,15 @@ export async function summarizeChapter(
             
             If the provided text is not a chapter (e.g., Table of Contents, Dedication, Preface, Acknowledgments, Index, or other non-story content), return raw JSON: {"notAChapter": true}.
             
-            When comparing chapters, use flexible matching:
-            - Convert numbers to words (e.g., "5" → "five")
-            - Remove non-alphanumeric characters
-            - Convert to lowercase
-            - Allow for minor variations in formatting
+            When comparing chapters, focus on understanding the semantic meaning rather than exact text matching:
+            - Consider synonyms and alternative phrasings
+            - Understand that different wordings may refer to the same chapter
+            - Focus on the core meaning and context rather than exact wording
+            - Be flexible with chapter numbering formats (e.g., "Chapter 5", "Five", "V")
+            - Recognize abbreviated chapter titles
+            - Handle partial matches (e.g., "Chapter Twenty" matches "Chapter 20: Accusations")
+            - Match chapter numbers regardless of their format (e.g., "20", "Twenty", "XX")
+            - Ignore additional descriptive text after chapter numbers
             
             If the normalized current chapter matches the normalized summarizeUntilChapter, include "stop": true in the response.
             Otherwise, return raw JSON with:
