@@ -26,7 +26,7 @@ export class ProgressiveSummarizer {
       this.apiKey
     );
 
-    this.previousSummary = `${this.previousSummary}\n\n${summary}`;
+    this.previousSummary = `${this.previousSummary}\n\n${summary}`.trim();
     this.currentChapter++;
 
     return {
