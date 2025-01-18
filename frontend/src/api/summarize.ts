@@ -58,47 +58,31 @@ export async function summarizeChapter(
         {
           role: "system",
           content: `
-            You are a helpful assistant that summarizes books to help readers quickly grasp the content.
-            Your responsibilities include:
-            - Identifying key plot points
-            - Tracking character developments
-            - Highlighting important details
-            - Including the specified chapter in the summary (summarizeUntilChapter)
-            
-            You will be provided:
-            - Summaries of previous chapters
-            - Full text of the current chapter to summarize
-            - The chapter at which to stop summarization (summarizeUntilChapter)
-            - A table of contents with official chapter names
-            
-            If the provided text is not a chapter (e.g., Table of Contents, Dedication, Preface, Acknowledgments, Index, or other non-story content), return raw JSON: {"notAChapter": true}.
-            
-            When identifying chapter names:
+            You are a book summarization assistant. Your responsibilities:
+            - Identify key plot points, character developments, and important details
+            - Include the specified chapter (summarizeUntilChapter) in the summary
             - Use the provided table of contents as the source of truth for chapter names
-            - If the detected chapter name differs slightly from the table of contents, correct it to the closest matching name
-            - Ensure the returned chapter name exactly matches one from the table of contents
-            - For chapter numbers, normalize them to match the table of contents format
-            - Handle partial matches by selecting the most similar chapter name from the table of contents
-            
-            When comparing chapters, focus on understanding the semantic meaning rather than exact text matching:
-            - Consider synonyms and alternative phrasings
-            - Understand that different wordings may refer to the same chapter
-            - Focus on the core meaning and context rather than exact wording
-            - Be flexible with chapter numbering formats (e.g., "Chapter 5", "Five", "V")
-            - Recognize abbreviated chapter titles
-            - Handle partial matches (e.g., "Chapter Twenty" matches "Chapter 20: Accusations")
-            - Match chapter numbers regardless of their format (e.g., "20", "Twenty", "XX")
-            - Ignore additional descriptive text after chapter numbers
-            
-            If the normalized current chapter matches the normalized summarizeUntilChapter, include "stop": true in the response.
-            Otherwise, return raw JSON with:
-            - "chapter": The chapter name/title (must exactly match one from the table of contents)
-            - "summary": The chapter summary
-            - "stop": boolean (true if this is the last chapter to summarize)
-            Always return JSON in a code block that starts with "\`\`\`json" and ends with "\`\`\`".
-            
+            - Normalize chapter names/numbers to match table of contents format
+            - Handle partial matches and alternative phrasings intelligently
+
+            Inputs provided:
+            - Previous chapters' summary
+            - Current chapter text
+            - Chapter to stop after (summarizeUntilChapter)
+            - Table of contents
+
+            If text is not a chapter (e.g., TOC, Preface), return: {"notAChapter": true}
+
+            For valid chapters, return JSON in code block:
+            \`\`\`json
+            {
+              "chapter": "Exact chapter name from TOC",
+              "summary": "Concise chapter summary",
+              "stop": true/false (true if current chapter matches summarizeUntilChapter)
+            }
+            \`\`\`
+
             Example:
-            <example>
             \`\`\`json
             {
               "chapter": "Chapter 1: The Beginning",
@@ -106,37 +90,40 @@ export async function summarizeChapter(
               "stop": false
             }
             \`\`\`
-            </example>
           `.trim(),
         },
         {
           role: "user",
           content: `
-          ### Table of Contents
-          <table_of_contents>
+          ### Input Data
+          <TableOfContents>
           ${tableOfContents.join('\n')}
-          </table_of_contents>
+          </TableOfContents>
 
-          ### Stop After Chapter
-          <stop_after_chapter>
+          <StopAfterChapter>
           ${summarizeUntilChapter}
-          </stop_after_chapter>
+          </StopAfterChapter>
 
-          ### Previous Chapters Summary
-          <previous_chapters_summary>
+          <PreviousSummary>
           ${previousSummary}
-          </previous_chapters_summary>
-          
-          ### Current Chapter Text
-          <current_chapter_text>
+          </PreviousSummary>
+
+          <CurrentChapter>
           ${chapter}
-          </current_chapter_text>
-          
-          ### Summarization of current chapter
-          
-          Here is the summarization of the current chapter, adhering to the requirements:
-          - Use the provided table of contents for chapter name matching
-          - Ensure the chapter name matches exactly with one from the table of contents
+          </CurrentChapter>
+
+          ### Instructions
+          1. Generate a concise summary (150-300 words) of the current chapter
+          2. Maintain narrative flow and key plot points
+          3. Use exact chapter names from TableOfContents
+          4. Return JSON in code block:
+          \`\`\`json
+          {
+            "chapter": "Exact chapter name",
+            "summary": "Your summary here",
+            "stop": true/false
+          }
+          \`\`\`
           `.trim(),
         },
       ],
