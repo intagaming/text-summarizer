@@ -66,6 +66,9 @@ function App() {
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [showChapterSelect, setShowChapterSelect] = useState(false);
+  const [tocChapters, setTocChapters] = useState<string[]>([]);
+  const [convertedChapters, setConvertedChapters] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [apiKey, setApiKey] = useState(() => {
     const savedApiKey = localStorage.getItem("text-summarizer-api-key");
@@ -115,7 +118,7 @@ function App() {
       }
 
       const data: { chapters: string[]; toc: string[] } = await response.json();
-      return data; // Return chapters and table of contents
+      return data;
     } catch (err) {
       throw new Error(
         err instanceof Error ? err.message : "Failed to convert EPUB file"
@@ -135,14 +138,24 @@ function App() {
 
     try {
       if (data.file.type === "application/epub+zip") {
-        setIsConverting(true);
-        const { chapters, toc } = await convertEpubToChapters(data.file);
-        setIsConverting(false);
+        if (!convertedChapters.length) {
+          setIsConverting(true);
+          const { chapters, toc } = await convertEpubToChapters(data.file);
+          setConvertedChapters(chapters);
+          setTocChapters(toc);
+          setIsConverting(false);
+          
+          if (!data.stopUntilChapter) {
+            setShowChapterSelect(true);
+            return;
+          }
+        }
+
         const summarizer = new ProgressiveSummarizer(
-          chapters,
+          convertedChapters,
           apiKey,
           data.stopUntilChapter || "",
-          toc
+          tocChapters
         );
         setSummary(await summarizer.summarizeChapters());
         setChapterSummaries(
@@ -228,6 +241,7 @@ function App() {
                       const files = e.target.files;
                       if (files && files.length > 0) {
                         setValue("file", files[0]);
+                        setConvertedChapters([]);
                       }
                     }}
                   />
@@ -274,24 +288,29 @@ function App() {
                     )}
                   </>
                 )}
-                {watch("type") === "book" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="stopUntilChapter">
-                      Summarize Until Chapter
-                    </Label>
-                    <Input
-                      id="stopUntilChapter"
-                      {...register("stopUntilChapter")}
-                      placeholder="Enter the chapter to stop summarizing at"
-                    />
-                    {errors.stopUntilChapter && (
-                      <p className="text-sm text-destructive">
-                        {errors.stopUntilChapter.message}
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
+
+              {showChapterSelect && (
+                <div className="space-y-2">
+                  <Label>Select Chapter</Label>
+                  <Select
+                    onValueChange={(value) => {
+                      setValue("stopUntilChapter", value);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a chapter" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tocChapters.map((chapter, index) => (
+                        <SelectItem key={index} value={chapter}>
+                          {chapter}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <Button
                 type="submit"
@@ -302,6 +321,8 @@ function App() {
                   ? "Converting EPUB..."
                   : isLoading
                   ? "Generating Summary..."
+                  : showChapterSelect
+                  ? "Continue"
                   : "Generate Summary"}
               </Button>
             </form>

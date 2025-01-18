@@ -54,7 +54,7 @@ export async function summarizeChapter(
     });
 
     const completion = await openai.chat.completions.create({
-      model: "mistralai/mistral-nemo",
+      model: "google/gemini-flash-1.5",
       messages: [
         {
           role: "system",
@@ -64,13 +64,22 @@ You are a book summarization assistant. Your responsibilities:
 - Use the provided table of contents as the source of truth for chapter names
 - Normalize chapter names/numbers to match table of contents format
 - Handle partial matches and alternative phrasings intelligently
+- Analyze text for narrative elements to confirm chapter status:
+  * Character development and interactions
+  * Plot progression and story arcs
+  * Dialogue exchanges between characters
+  * Scene transitions and setting changes
+  * Recurring themes and motifs
+  * Clear beginning and ending that ties into larger narrative
+  * Chapter titles or numbered sections
+  * Contextual clues suggesting continuity
 
 Inputs provided:
 - Previous chapters' summary
 - Current chapter text
 - Table of contents
 
-If text is not a chapter (e.g., TOC, Preface), return: {"notAChapter": true}
+If text is not a chapter (e.g., TOC, Preface, or lacks narrative elements), return: {"notAChapter": true}
 
 For valid chapters, return JSON in code block:
 <example>
