@@ -34,9 +34,17 @@ function App() {
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState(() => {
+    const savedApiKey = localStorage.getItem("text-summarizer-api-key");
+    return savedApiKey || "";
+  });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const THEME_KEY = "text-summarizer-theme";
+  const API_KEY = "text-summarizer-api-key";
+
+  useEffect(() => {
+    localStorage.setItem(API_KEY, apiKey);
+  }, [apiKey]);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     const savedTheme = localStorage.getItem(THEME_KEY);
     return savedTheme === "dark" ? "dark" : "light";
