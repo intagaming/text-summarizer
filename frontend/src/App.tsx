@@ -85,6 +85,18 @@ function App() {
     },
   });
 
+  const resetState = () => {
+    setConvertedChapters([]);
+    setSummary(null);
+    setChapterSummaries([]);
+    setIsLoading(false);
+    setIsConverting(false);
+    setShowChapterSelect(false);
+    setTocChapters([]);
+    setError("");
+    setProgress(0);
+  };
+
   useEffect(() => {
     localStorage.setItem(API_KEY, apiKey);
   }, [apiKey]);
@@ -252,15 +264,7 @@ function App() {
                       const files = e.target.files;
                       if (files && files.length > 0) {
                         setValue("file", files[0]);
-                        setConvertedChapters([]);
-                        setSummary(null);
-                        setChapterSummaries([]);
-                        setIsLoading(false);
-                        setIsConverting(false);
-                        setShowChapterSelect(false);
-                        setTocChapters([]);
-                        setError("");
-                        setProgress(0);
+                        resetState();
                       }
                     }}
                   />
