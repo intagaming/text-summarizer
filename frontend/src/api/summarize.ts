@@ -76,14 +76,18 @@ export async function summarizeChapter(
             - "chapter": The chapter name/title
             - "summary": The chapter summary
             - "stop": boolean (true if this is the last chapter to summarize)
-            Always return raw JSON without any code block formatting or additional text.
+            Always return JSON in a code block that starts with "\`\`\`json" and ends with "\`\`\`".
             
             Example:
+            <example>
+            \`\`\`json
             {
               "chapter": "Chapter 1: The Beginning",
               "summary": "The story begins with...",
               "stop": false
             }
+            \`\`\`
+            </example>
           `.trim(),
         },
         {
@@ -114,16 +118,22 @@ export async function summarizeChapter(
 
     const result = completion.choices[0].message.content?.trim();
     try {
-      const parsed = JSON.parse(result || "{}");
+      // Extract JSON from code block
+      if (!result) {
+        throw new Error('No response content found');
+      }
+      
+      const jsonStart = result.indexOf('```json');
+      const jsonEnd = result.lastIndexOf('```');
+      if (jsonStart === -1 || jsonEnd === -1 || jsonStart >= jsonEnd) {
+        throw new Error('No valid JSON code block found');
+      }
+      
+      const jsonContent = result.slice(jsonStart + 7, jsonEnd).trim();
+      const parsed = JSON.parse(jsonContent || "{}");
       if (parsed.notAChapter) {
         return { chapter: "", summary: "" };
       }
-    } catch (error) {
-      throw new Error(`Failed to parse summary: ${error instanceof Error ? error.message : "Invalid JSON format"}`);
-    }
-    
-    try {
-      const parsed = JSON.parse(result || "{}");
       return {
         chapter: parsed.chapter || "",
         summary: parsed.summary || "",
