@@ -257,6 +257,14 @@ function App() {
                       if (files && files.length > 0) {
                         setValue("file", files[0]);
                         setConvertedChapters([]);
+                        setSummary(null);
+                        setChapterSummaries([]);
+                        setIsLoading(false);
+                        setIsConverting(false);
+                        setShowChapterSelect(false);
+                        setTocChapters([]);
+                        setError("");
+                        setProgress(0);
                       }
                     }}
                   />
