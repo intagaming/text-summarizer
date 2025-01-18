@@ -60,7 +60,7 @@ export async function summarizeChapter(
           content: `
             You are a book summarization assistant. Your responsibilities:
             - Identify key plot points, character developments, and important details
-            - Include the specified chapter (summarizeUntilChapter) in the summary
+            - Stop after generating summary for the StopAfterChapter chapter
             - Use the provided table of contents as the source of truth for chapter names
             - Normalize chapter names/numbers to match table of contents format
             - Handle partial matches and alternative phrasings intelligently
@@ -68,12 +68,13 @@ export async function summarizeChapter(
             Inputs provided:
             - Previous chapters' summary
             - Current chapter text
-            - Chapter to stop after (summarizeUntilChapter)
+            - Chapter to stop after (StopAfterChapter)
             - Table of contents
 
             If text is not a chapter (e.g., TOC, Preface), return: {"notAChapter": true}
 
             For valid chapters, return JSON in code block:
+            <example>
             \`\`\`json
             {
               "chapter": "Exact chapter name from TOC",
@@ -81,8 +82,10 @@ export async function summarizeChapter(
               "stop": true/false (true if current chapter matches summarizeUntilChapter)
             }
             \`\`\`
+            </example>
 
             Example:
+            <example>
             \`\`\`json
             {
               "chapter": "Chapter 1: The Beginning",
@@ -90,6 +93,7 @@ export async function summarizeChapter(
               "stop": false
             }
             \`\`\`
+            <example>
           `.trim(),
         },
         {
@@ -97,7 +101,7 @@ export async function summarizeChapter(
           content: `
           ### Input Data
           <TableOfContents>
-          ${tableOfContents.join('\n')}
+          ${tableOfContents.join("\n")}
           </TableOfContents>
 
           <StopAfterChapter>
@@ -117,6 +121,7 @@ export async function summarizeChapter(
           2. Maintain narrative flow and key plot points
           3. Use exact chapter names from TableOfContents
           4. Return JSON in code block:
+          <example>
           \`\`\`json
           {
             "chapter": "Exact chapter name",
@@ -124,6 +129,7 @@ export async function summarizeChapter(
             "stop": true/false
           }
           \`\`\`
+          </example>
           `.trim(),
         },
       ],
