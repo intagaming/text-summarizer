@@ -1,66 +1,81 @@
-import { useState } from 'react'
-import { summarizeText } from './api/summarize'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Settings, FileInput } from 'lucide-react'
-import './App.css'
+import { useState } from "react";
+import { summarizeText } from "./api/summarize";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Settings, FileInput } from "lucide-react";
 
 const schema = z.object({
   file: z.instanceof(File),
-  query: z.string().min(1, 'Query is required'),
-})
+  query: z.string().min(1, "Query is required"),
+});
 
-type FormData = z.infer<typeof schema>
+type FormData = z.infer<typeof schema>;
 
 function App() {
-  const [summary, setSummary] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [apiKey, setApiKey] = useState('')
-  const [showSettings, setShowSettings] = useState(false)
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema)
-  })
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
 
   const onSubmit = async (data: FormData) => {
     if (!apiKey) {
-      setError('Please set your OpenAI API key in settings')
-      return
+      setError("Please set your OpenAI API key in settings");
+      return;
     }
 
-    setIsLoading(true)
-    setError('')
-    
+    setIsLoading(true);
+    setError("");
+
     try {
-      const text = await data.file.text()
-      const summary = await summarizeText(text, data.query, apiKey)
-      setSummary(summary)
+      const text = await data.file.text();
+      const summary = await summarizeText(text, data.query, apiKey);
+      setSummary(summary);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred')
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred"
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className={`min-h-screen bg-background ${theme}`}>
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <Card className="max-w-3xl mx-auto">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-2xl font-bold">Text Summarizer</CardTitle>
+            <CardTitle className="text-2xl font-bold">
+              Text Summarizer
+            </CardTitle>
             <div className="flex items-center gap-4">
               <Switch
-                checked={theme === 'dark'}
-                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                checked={theme === "dark"}
+                onCheckedChange={(checked) =>
+                  setTheme(checked ? "dark" : "light")
+                }
                 aria-label="Toggle theme"
               />
               <Button
@@ -99,12 +114,14 @@ function App() {
                   <Input
                     id="file"
                     type="file"
-                    {...register('file')}
+                    {...register("file")}
                     className="w-full"
                   />
                 </div>
                 {errors.file && (
-                  <p className="text-sm text-destructive">{errors.file.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.file.message}
+                  </p>
                 )}
               </div>
 
@@ -112,17 +129,19 @@ function App() {
                 <Label htmlFor="query">Query</Label>
                 <Textarea
                   id="query"
-                  {...register('query')}
+                  {...register("query")}
                   rows={3}
                   placeholder="Enter your query for summarization..."
                 />
                 {errors.query && (
-                  <p className="text-sm text-destructive">{errors.query.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.query.message}
+                  </p>
                 )}
               </div>
 
               <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? 'Generating Summary...' : 'Generate Summary'}
+                {isLoading ? "Generating Summary..." : "Generate Summary"}
               </Button>
             </form>
           </CardContent>
@@ -137,14 +156,16 @@ function App() {
             <CardContent>
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Summary</h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">{summary}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">
+                  {summary}
+                </p>
               </div>
             </CardContent>
           )}
         </Card>
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
