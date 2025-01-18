@@ -63,7 +63,7 @@ export async function summarizeChapter(
             - Identifying key plot points
             - Tracking character developments
             - Highlighting important details
-            - Stopping summarization when reaching the specified chapter
+            - Including the specified chapter in the summary (summarizeUntilChapter)
             
             You will be provided:
             - Summaries of previous chapters
