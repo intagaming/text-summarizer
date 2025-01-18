@@ -68,7 +68,15 @@ export async function summarizeChapter(
             - Full text of the current chapter to summarize
             
             If the provided text is not a chapter, return exactly "NOT A CHAPTER".
-            Otherwise, answer with the summary of the current chapter.
+            Otherwise, return a JSON object with:
+            - "chapter": The chapter name/title
+            - "summary": The chapter summary
+            
+            Example:
+            {
+              "chapter": "Chapter 1: The Beginning",
+              "summary": "The story begins with..."
+            }
           `.trim(),
         },
         {
@@ -94,9 +102,18 @@ export async function summarizeChapter(
 
     const result = completion.choices[0].message.content?.trim();
     if (result?.toUpperCase() === "NOT A CHAPTER") {
-      return "";
+      return { chapter: "", summary: "" };
     }
-    return result || "";
+    
+    try {
+      const parsed = JSON.parse(result || "{}");
+      return {
+        chapter: parsed.chapter || "",
+        summary: parsed.summary || ""
+      };
+    } catch (error) {
+      throw new Error(`Failed to parse summary: ${error instanceof Error ? error.message : "Invalid JSON format"}`);
+    }
   } catch (error: unknown) {
     if (error instanceof Error) {
       throw new Error(`Failed to generate summary: ${error.message}`);
