@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { summarizeText } from "./api/summarize";
+import { summarizeText, summarizeChapter } from "./api/summarize";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -85,17 +85,20 @@ function App() {
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://localhost:8080/convertEpubToChapters", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "http://localhost:8080/convertEpubToChapters",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         throw new Error(await response.text());
       }
 
       const data = await response.json();
-      return data.chapters.join("\n\n"); // Combine chapters with double newlines
+      return data.chapters; // Return array of chapters
     } catch (err) {
       throw new Error(
         err instanceof Error ? err.message : "Failed to convert EPUB file"
@@ -124,7 +127,9 @@ function App() {
         text = await data.file.text();
       }
 
-      const summary = await summarizeText(text, data.query, apiKey, data.type);
+      const summary = data.file.type === "application/epub+zip"
+        ? await summarizeChapter(text, data.query, apiKey)
+        : await summarizeText(text, data.query, apiKey);
       setSummary(summary);
     } catch (err) {
       setError(
@@ -214,7 +219,9 @@ function App() {
               <div className="space-y-2">
                 <Label>Summarization Type</Label>
                 <Select
-                  onValueChange={(value) => setValue("type", value as "book" | "general")}
+                  onValueChange={(value) =>
+                    setValue("type", value as "book" | "general")
+                  }
                   defaultValue="general"
                 >
                   <SelectTrigger className="w-full">
@@ -222,7 +229,9 @@ function App() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general">General text</SelectItem>
-                    <SelectItem value="book">Summarize to resume reading a book</SelectItem>
+                    <SelectItem value="book">
+                      Summarize to resume reading a book
+                    </SelectItem>
                   </SelectContent>
                 </Select>
 
