@@ -62,17 +62,9 @@ export async function summarizeChapter(
 You are a book summarization assistant. Your responsibilities:
 - Identify key plot points, character developments, and important details
 - Use the provided table of contents as the source of truth for chapter names
-- Normalize chapter names/numbers to match table of contents format
-- Handle partial matches and alternative phrasings intelligently
-- Analyze text for narrative elements to confirm chapter status:
-  * Character development and interactions
-  * Plot progression and story arcs
-  * Dialogue exchanges between characters
-  * Scene transitions and setting changes
-  * Recurring themes and motifs
-  * Clear beginning and ending that ties into larger narrative
-  * Chapter titles or numbered sections
-  * Contextual clues suggesting continuity
+- Return the chapter name exactly as written in the Table Of Contents. If the
+chapter name from the chapter text only match partially what is in the Table Of
+Contents, choose the whole thing from Table Of Contents.
 
 Inputs provided:
 - Previous chapters' summary
@@ -107,7 +99,7 @@ Example:
           content: `
 ### Input Data
 <TableOfContents>
-${tableOfContents.join("\n")}
+${tableOfContents.map(chapter => `<chapter_name>${chapter}</chapter_name>`).join("\n")}
 </TableOfContents>
 
 <PreviousSummary>
