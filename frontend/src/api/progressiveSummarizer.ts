@@ -5,12 +5,14 @@ export class ProgressiveSummarizer {
   private currentChapter: number;
   private previousSummary: string;
   private apiKey: string;
+  private stopUntilChapter: string;
 
-  constructor(chapters: string[], apiKey: string) {
+  constructor(chapters: string[], apiKey: string, stopUntilChapter: string) {
     this.chapters = chapters;
     this.currentChapter = 0;
     this.previousSummary = "";
     this.apiKey = apiKey;
+    this.stopUntilChapter = stopUntilChapter;
   }
 
   async summarizeNextChapter(): Promise<{ chapter: string; summary: string; done: boolean }> {
@@ -20,10 +22,11 @@ export class ProgressiveSummarizer {
 
     const chapterText = this.chapters[this.currentChapter];
 
-    const { chapter, summary } = await summarizeChapter(
+    const { chapter, summary, stop } = await summarizeChapter(
       this.previousSummary,
       chapterText,
-      this.apiKey
+      this.apiKey,
+      this.stopUntilChapter
     );
 
     this.previousSummary = `${this.previousSummary}\n\n${chapter}\n${summary}`.trim();
@@ -32,7 +35,7 @@ export class ProgressiveSummarizer {
     return {
       chapter: chapter || "",
       summary: summary || "",
-      done: this.currentChapter >= this.chapters.length,
+      done: stop || this.currentChapter >= this.chapters.length,
     };
   }
 

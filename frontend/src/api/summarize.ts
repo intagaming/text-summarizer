@@ -41,7 +41,8 @@ export async function summarizeText(
 export async function summarizeChapter(
   previousSummary: string,
   chapter: string,
-  apiKey: string
+  apiKey: string,
+  summarizeUntilChapter: string
 ) {
   console.log(123, previousSummary, chapter);
   try {
@@ -62,20 +63,25 @@ export async function summarizeChapter(
             - Identifying key plot points
             - Tracking character developments
             - Highlighting important details
+            - Stopping summarization when reaching the specified chapter
             
             You will be provided:
             - Summaries of previous chapters
             - Full text of the current chapter to summarize
+            - The chapter at which to stop summarization (summarizeUntilChapter)
             
             If the provided text is not a chapter, return exactly "NOT A CHAPTER".
+            If the current chapter matches summarizeUntilChapter, include "stop": true in the response.
             Otherwise, return a JSON object with:
             - "chapter": The chapter name/title
             - "summary": The chapter summary
+            - "stop": boolean (true if this is the last chapter to summarize)
             
             Example:
             {
               "chapter": "Chapter 1: The Beginning",
-              "summary": "The story begins with..."
+              "summary": "The story begins with...",
+              "stop": false
             }
           `.trim(),
         },
@@ -91,6 +97,11 @@ export async function summarizeChapter(
             <current_chapter_text>
             ${chapter}
             </current_chapter_text>
+            
+            ### Stop After Chapter
+            <stop_after_chapter>
+            ${summarizeUntilChapter}
+            </stop_after_chapter>
             
             ### Summarization of current chapter
           `.trim(),
@@ -109,7 +120,8 @@ export async function summarizeChapter(
       const parsed = JSON.parse(result || "{}");
       return {
         chapter: parsed.chapter || "",
-        summary: parsed.summary || ""
+        summary: parsed.summary || "",
+        stop: parsed.stop || false
       };
     } catch (error) {
       throw new Error(`Failed to parse summary: ${error instanceof Error ? error.message : "Invalid JSON format"}`);

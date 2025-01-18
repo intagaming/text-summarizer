@@ -31,19 +31,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const schema = z.object({
-  file: z
-    .instanceof(File)
-    .refine(
-      (file) =>
-        file.type === "application/epub+zip" || file.type === "text/plain",
-      {
-        message: "Only EPUB and text files are allowed",
-      }
-    ),
-  query: z.string().min(1, "Query is required"),
-  type: z.enum(["book", "general"]),
-});
+const schema = z
+  .object({
+    file: z
+      .instanceof(File)
+      .refine(
+        (file) =>
+          file.type === "application/epub+zip" || file.type === "text/plain",
+        {
+          message: "Only EPUB and text files are allowed",
+        }
+      ),
+    query: z.string().optional(),
+    type: z.enum(["book", "general"]),
+    stopUntilChapter: z.string().optional(),
+  })
+  .refine((data) => data.type !== "general" || data.query, {
+    message: "Query is required for general text summarization",
+    path: ["query"],
+  });
 
 type FormData = z.infer<typeof schema>;
 
@@ -76,6 +82,7 @@ function App() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -123,11 +130,15 @@ function App() {
         const text = await convertEpubToChapters(data.file);
         setIsConverting(false);
         setSummary(
-          await new ProgressiveSummarizer(text, apiKey).summarizeChapters()
+          await new ProgressiveSummarizer(
+            text,
+            apiKey,
+            data.stopUntilChapter || ""
+          ).summarizeChapters()
         );
       } else {
         const text = await data.file.text();
-        setSummary(await summarizeText(text, data.query, apiKey));
+        setSummary(await summarizeText(text, data.query || "", apiKey));
       }
     } catch (err) {
       setError(
@@ -233,17 +244,38 @@ function App() {
                   </SelectContent>
                 </Select>
 
-                <Label htmlFor="query">Query</Label>
-                <Textarea
-                  id="query"
-                  {...register("query")}
-                  rows={3}
-                  placeholder="Enter your query for summarization..."
-                />
-                {errors.query && (
-                  <p className="text-sm text-destructive">
-                    {errors.query.message}
-                  </p>
+                {watch("type") === "general" && (
+                  <>
+                    <Label htmlFor="query">Query</Label>
+                    <Textarea
+                      id="query"
+                      {...register("query")}
+                      rows={3}
+                      placeholder="Enter your query for summarization..."
+                    />
+                    {errors.query && (
+                      <p className="text-sm text-destructive">
+                        {errors.query.message}
+                      </p>
+                    )}
+                  </>
+                )}
+                {watch("type") === "book" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="stopUntilChapter">
+                      Summarize Until Chapter
+                    </Label>
+                    <Input
+                      id="stopUntilChapter"
+                      {...register("stopUntilChapter")}
+                      placeholder="Enter the chapter to stop summarizing at"
+                    />
+                    {errors.stopUntilChapter && (
+                      <p className="text-sm text-destructive">
+                        {errors.stopUntilChapter.message}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 
