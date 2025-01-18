@@ -30,6 +30,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 const schema = z
   .object({
@@ -57,7 +63,33 @@ function App() {
   const [summary, setSummary] = useState<string | null>(null);
   const [chapterSummaries, setChapterSummaries] = useState<
     Array<{ chapter: string; summary: string }>
-  >([]);
+  >([
+    {
+      chapter: "Chapter One",
+      summary:
+        "Violet Sorrengail, a scribe destined for the Riders Quadrant, faces her mother's decree on Conscription Day.  Her sister, Mira, a seasoned rider, tries to dissuade their mother, but Violet is ultimately assigned to the Riders Quadrant.  Violet's mother, General Sorrengail, is unmoved by her daughter's pleas and Mira's arguments, emphasizing Violet's lack of physical strength and her scribe background.  Mira, recognizing Violet's vulnerability, equips her with rider gear and provides crucial advice for survival.  The chapter culminates with Violet and Mira reaching the entrance to the Riders Quadrant, where Violet encounters Xaden Riorson, the son of a traitorous leader, and the potential danger he poses.  The chapter ends with Dylan, a fellow candidate, falling from the parapet, highlighting the perilous nature of the Riders Quadrant.",
+    },
+    {
+      chapter: "Chapter Two",
+      summary:
+        "Violet, determined not to die on the perilous parapet of the Riders Quadrant, navigates the treacherous path, reciting historical facts to maintain composure.  She encounters the aggressive Jack Barlowe, who tries to push her off the parapet.  Violet manages to reach safety, but not without a close call.  Jack, despite threats, is restrained by the rules of the quadrant, and Violet is accepted into the citadel.  The chapter highlights the dangers and challenges faced by candidates in the Riders Quadrant, emphasizing the importance of survival and the potential for violence.",
+    },
+    {
+      chapter: "Chapter Three",
+      summary:
+        "Violet, having survived the perilous parapet, finds herself in the courtyard of the Riders Quadrant citadel.  She encounters Dain Aetos, a familiar figure from her past, now a second-year rider.  Violet's knee is injured, and she experiences nausea and trembling.  Dain helps her to an alcove, where she rests and bandages her knee.  A tense encounter ensues with Dain, who questions Violet's presence in the Riders Quadrant and her mother's decision.  Violet explains her situation, and Dain, recognizing the danger, suggests she leave.  Violet refuses, asserting her determination to succeed.  The chapter concludes with Violet and Dain's discussion about her future in the Riders Quadrant, and their decision to have Violet join Dain's squad in Fourth Wing, highlighting the challenges and dangers Violet faces in her new environment.",
+    },
+    {
+      chapter: "Chapter Four",
+      summary:
+        "Violet, now a first-year rider in Fourth Wing, attends a morning formation where cadet deaths are commemorated.  She observes the challenges and potential dangers faced by her fellow cadets, including the repetition of the year for some.  Violet and her squad are assigned to the sparring gym later that day.  Violet encounters Dain, a familiar figure from her past, now a second-year rider.  Their conversation reveals that Xaden Riorson, a cadet with a history of conflict, wants Violet dead, and has manipulated her squad placement to facilitate this.  Dain, recognizing the danger, urges Violet to be cautious, particularly during Battle Brief.  The chapter ends with Violet spotting Xaden, who is observing her, and the realization that she is in immediate danger.",
+    },
+    {
+      chapter: "Chapter Five",
+      summary:
+        "Violet objects to a Battle Brief plan that forces children of rebel leaders to witness executions.  The chapter details the Battle Brief class, where Violet learns about a recent attack on the Eastern Wing by Braevi gryphons and riders.  Violet, using her scribe training, correctly deduces that the attacking riders were already on their way due to the dragons sensing the faltering wards.  This observation leads to a heated exchange with Jack Barlowe, who mocks Violet's deduction.  Violet's insightful analysis is eventually validated by Professor Devera.  The chapter concludes with Violet's sparring match against Imogen, a marked one, where Violet's injury leads to her yielding.  The chapter highlights Violet's growing awareness of the political and strategic complexities of the conflict and the dangers she faces within the Riders Quadrant.",
+    },
+  ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState("");
@@ -306,25 +338,31 @@ function App() {
             </CardFooter>
           )}
 
-          {summary && (
+          {!summary && (
             <CardContent>
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Chapter Summaries</h2>
                 <div className="space-y-2">
-                  {chapterSummaries.map((chapter, index) => (
-                    <Card key={index}>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4">
-                        <CardTitle className="text-lg">
-                          {chapter.chapter}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <p className="text-muted-foreground whitespace-pre-wrap">
-                          {chapter.summary}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  <Accordion
+                    type="single"
+                    collapsible
+                    defaultValue={`item-${chapterSummaries.length - 1}`}
+                  >
+                    {chapterSummaries.map((chapter, index) => (
+                      <AccordionItem key={index} value={`item-${index}`}>
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <CardTitle className="text-lg">
+                            {chapter.chapter}
+                          </CardTitle>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <p className="text-muted-foreground whitespace-pre-wrap">
+                            {chapter.summary}
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
                 </div>
               </div>
             </CardContent>
