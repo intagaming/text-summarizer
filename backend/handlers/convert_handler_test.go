@@ -65,7 +65,7 @@ func TestConvertEpubToHtmlHandler(t *testing.T) {
 			rr := httptest.NewRecorder()
 
 			// Call handler
-			ConvertEpubToHtmlHandler(rr, req)
+			ConvertEpubToChaptersHandler(rr, req)
 
 			// Check status code
 			assert.Equal(t, tt.expectedStatus, rr.Code)

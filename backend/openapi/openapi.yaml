@@ -32,15 +32,29 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
-                  format: markdown
-              example: |
-                [
-                  "# Chapter 1\n\nContent of chapter 1...",
-                  "# Chapter 2\n\nContent of chapter 2..."
-                ]
+                type: object
+                properties:
+                  chapters:
+                    type: array
+                    items:
+                      type: string
+                      format: markdown
+                  toc:
+                    type: array
+                    items:
+                      type: string
+                      description: Chapter title
+                example: |
+                  {
+                    "chapters": [
+                      "# Chapter 1\n\nContent of chapter 1...",
+                      "# Chapter 2\n\nContent of chapter 2..."
+                    ],
+                    "toc": [
+                      "Chapter 1",
+                      "Chapter 2"
+                    ]
+                  }
         '400':
           description: Bad request (invalid file type or size)
           content:

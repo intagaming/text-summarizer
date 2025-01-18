@@ -42,6 +42,19 @@ type spine struct {
 	ItemRefs []itemRef `xml:"itemref"`
 }
 
+type content struct {
+	Src string `xml:"src,attr"`
+}
+
+type tocEntry struct {
+	Text    string  `xml:"navLabel>text"`
+	Content content `xml:"content"`
+}
+
+type toc struct {
+	NavPoints []tocEntry `xml:"navMap>navPoint"`
+}
+
 type itemRef struct {
 	IDRef string `xml:"idref,attr"`
 }
@@ -166,6 +179,40 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 		manifestMap[item.ID] = item
 	}
 
+	// Find and parse toc.ncx file
+	var tocFile *zip.File
+	for _, item := range pkg.Manifest.Items {
+		if item.ID == "ncx" {
+			tocPath := filepath.Join(filepath.Dir(rootFilePath), item.Href)
+			for _, f := range reader.File {
+				if f.Name == tocPath {
+					tocFile = f
+					break
+				}
+			}
+			break
+		}
+	}
+
+	var tableOfContents []string
+	if tocFile != nil {
+		tocContent, err := tocFile.Open()
+		if err != nil {
+			log.Printf("Error reading toc.ncx: %v\n", err)
+		} else {
+			defer tocContent.Close()
+
+			var tocXML toc
+			if err := xml.NewDecoder(tocContent).Decode(&tocXML); err != nil {
+				log.Printf("Error parsing toc.ncx: %v\n", err)
+			} else {
+				for _, entry := range tocXML.NavPoints {
+					tableOfContents = append(tableOfContents, entry.Text)
+				}
+			}
+		}
+	}
+
 	// Process each chapter in spine
 	var chapters []string
 	for _, itemRef := range pkg.Spine.ItemRefs {
@@ -217,5 +264,6 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"chapters": chapters,
+		"toc":      tableOfContents,
 	})
 }
