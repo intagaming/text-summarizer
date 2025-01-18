@@ -70,12 +70,13 @@ export async function summarizeChapter(
             - Full text of the current chapter to summarize
             - The chapter at which to stop summarization (summarizeUntilChapter)
             
-            If the provided text is not a chapter, return exactly "NOT A CHAPTER".
+            If the provided text is not a chapter, return raw JSON: {"notAChapter": true}.
             If the current chapter matches summarizeUntilChapter, include "stop": true in the response.
-            Otherwise, return a JSON object with:
+            Otherwise, return raw JSON with:
             - "chapter": The chapter name/title
             - "summary": The chapter summary
             - "stop": boolean (true if this is the last chapter to summarize)
+            Always return raw JSON without any code block formatting or additional text.
             
             Example:
             {
@@ -112,8 +113,13 @@ export async function summarizeChapter(
     });
 
     const result = completion.choices[0].message.content?.trim();
-    if (result?.toUpperCase() === "NOT A CHAPTER") {
-      return { chapter: "", summary: "" };
+    try {
+      const parsed = JSON.parse(result || "{}");
+      if (parsed.notAChapter) {
+        return { chapter: "", summary: "" };
+      }
+    } catch (error) {
+      throw new Error(`Failed to parse summary: ${error instanceof Error ? error.message : "Invalid JSON format"}`);
     }
     
     try {
