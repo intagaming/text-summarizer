@@ -24,7 +24,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Register handlers with logging and recovery middleware
-	mux.Handle("/convertEpubToHtml", loggingMiddleware(recoveryMiddleware(http.HandlerFunc(handlers.ConvertEpubToHtmlHandler))))
+	mux.Handle("/convertEpubToChapters", loggingMiddleware(recoveryMiddleware(http.HandlerFunc(handlers.ConvertEpubToChaptersHandler))))
 
 	// Configure CORS
 	corsMiddleware := cors.New(cors.Options{

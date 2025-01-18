@@ -80,12 +80,12 @@ function App() {
     resolver: zodResolver(schema),
   });
 
-  const convertEpubToHtml = async (file: File) => {
+  const convertEpubToChapters = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      const response = await fetch("http://localhost:8080/convertEpubToHtml", {
+      const response = await fetch("http://localhost:8080/convertEpubToChapters", {
         method: "POST",
         body: formData,
       });
@@ -94,7 +94,8 @@ function App() {
         throw new Error(await response.text());
       }
 
-      return await response.text();
+      const data = await response.json();
+      return data.chapters.join("\n\n"); // Combine chapters with double newlines
     } catch (err) {
       throw new Error(
         err instanceof Error ? err.message : "Failed to convert EPUB file"
@@ -117,7 +118,7 @@ function App() {
 
       if (data.file.type === "application/epub+zip") {
         setIsConverting(true);
-        text = await convertEpubToHtml(data.file);
+        text = await convertEpubToChapters(data.file);
         setIsConverting(false);
       } else {
         text = await data.file.text();
