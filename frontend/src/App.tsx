@@ -4,21 +4,16 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { Settings } from "lucide-react";
 import { useState } from "react";
 import { ProgressiveSummarizer } from "./api/progressiveSummarizer";
 import { summarizeText } from "./api/summarize";
 import { ProgressIndicator } from "./components/Progress/ProgressIndicator";
-import {
-  SettingsDialog,
-} from "./components/Settings/SettingsDialog";
-import { useApiKey } from "./components/Settings/useApiKey";
-import {
-  SummaryForm,
-  SummaryFormData,
-} from "./components/SummaryForm/SummaryForm";
+import { SettingsDialog } from "./components/Settings/SettingsDialog";
+import { SummaryForm, SummaryFormData } from "./components/SummaryForm/SummaryForm";
 import { SummaryResults } from "./components/SummaryResults/SummaryResults";
 import { ThemeToggle } from "./components/Theme/ThemeToggle";
-import { Settings } from "lucide-react";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 
 const App = () => {
   const [summary, setSummary] = useState<string | null>(null);
@@ -33,7 +28,7 @@ const App = () => {
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(0);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { apiKey, setApiKey } = useApiKey();
+  const { apiKey } = useSettingsStore();
 
   const convertEpubToChapters = async (
     file: File
@@ -158,8 +153,6 @@ const App = () => {
           <SettingsDialog
             open={isSettingsOpen}
             onOpenChange={setIsSettingsOpen}
-            apiKey={apiKey}
-            setApiKey={setApiKey}
           />
 
           <CardContent>

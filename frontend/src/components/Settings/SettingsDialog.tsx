@@ -6,36 +6,18 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
-
-const API_KEY = "text-summarizer-api-key";
-
-export const useApiKey = () => {
-  const [apiKey, setApiKey] = useState(() => {
-    const savedApiKey = localStorage.getItem(API_KEY);
-    return savedApiKey || "";
-  });
-
-  useEffect(() => {
-    localStorage.setItem(API_KEY, apiKey);
-  }, [apiKey]);
-
-  return { apiKey, setApiKey };
-};
+import { useSettingsStore } from "@/stores/useSettingsStore";
 
 interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  apiKey: string;
-  setApiKey: (key: string) => void;
 }
 
 export const SettingsDialog = ({
   open,
   onOpenChange,
-  apiKey,
-  setApiKey,
 }: SettingsDialogProps) => {
+  const { apiKey, setApiKey } = useSettingsStore();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>

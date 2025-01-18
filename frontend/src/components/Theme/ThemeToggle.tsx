@@ -1,25 +1,9 @@
 import { Switch } from "@/components/ui/switch";
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
-
-const THEME_KEY = "text-summarizer-theme";
-
-export const useTheme = () => {
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    const savedTheme = localStorage.getItem(THEME_KEY);
-    return savedTheme === "dark" ? "dark" : "light";
-  });
-
-  useEffect(() => {
-    localStorage.setItem(THEME_KEY, theme);
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
-
-  return { theme, setTheme };
-};
+import { useSettingsStore } from "@/stores/useSettingsStore";
 
 export const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useSettingsStore();
 
   return (
     <div className="flex items-center gap-2">
