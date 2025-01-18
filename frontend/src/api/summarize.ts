@@ -53,7 +53,7 @@ export async function summarizeChapter(
     });
 
     const completion = await openai.chat.completions.create({
-      model: "google/gemini-flash-1.5",
+      model: "google/gemini-flash-1.5-8b",
       messages: [
         {
           role: "system",
@@ -120,15 +120,15 @@ export async function summarizeChapter(
     try {
       // Extract JSON from code block
       if (!result) {
-        throw new Error('No response content found');
+        throw new Error("No response content found");
       }
-      
-      const jsonStart = result.indexOf('```json');
-      const jsonEnd = result.lastIndexOf('```');
+
+      const jsonStart = result.indexOf("```json");
+      const jsonEnd = result.lastIndexOf("```");
       if (jsonStart === -1 || jsonEnd === -1 || jsonStart >= jsonEnd) {
-        throw new Error('No valid JSON code block found');
+        throw new Error("No valid JSON code block found");
       }
-      
+
       const jsonContent = result.slice(jsonStart + 7, jsonEnd).trim();
       const parsed = JSON.parse(jsonContent || "{}");
       if (parsed.notAChapter) {
@@ -137,10 +137,14 @@ export async function summarizeChapter(
       return {
         chapter: parsed.chapter || "",
         summary: parsed.summary || "",
-        stop: parsed.stop || false
+        stop: parsed.stop || false,
       };
     } catch (error) {
-      throw new Error(`Failed to parse summary: ${error instanceof Error ? error.message : "Invalid JSON format"}`);
+      throw new Error(
+        `Failed to parse summary: ${
+          error instanceof Error ? error.message : "Invalid JSON format"
+        }`
+      );
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
