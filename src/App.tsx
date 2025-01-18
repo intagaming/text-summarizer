@@ -3,6 +3,13 @@ import { summarizeText } from './api/summarize'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Settings, FileInput } from 'lucide-react'
 import './App.css'
 
 const schema = z.object({
@@ -10,21 +17,19 @@ const schema = z.object({
   query: z.string().min(1, 'Query is required'),
 })
 
+type FormData = z.infer<typeof schema>
+
 function App() {
   const [summary, setSummary] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [showSettings, setShowSettings] = useState(false)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema)
   })
-
-  type FormData = {
-    file: File;
-    query: string;
-  };
 
   const onSubmit = async (data: FormData) => {
     if (!apiKey) {
@@ -47,87 +52,96 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Text Summarizer</h1>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 text-gray-500 hover:text-gray-700"
-          >
-            ⚙️
-          </button>
-        </div>
+    <div className={`min-h-screen bg-background ${theme}`}>
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <Card className="max-w-3xl mx-auto">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-2xl font-bold">Text Summarizer</CardTitle>
+            <div className="flex items-center gap-4">
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                aria-label="Toggle theme"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSettings(!showSettings)}
+                aria-label="Settings"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
+          </CardHeader>
 
-        {showSettings && (
-          <div className="mb-8 p-6 bg-white rounded-lg shadow">
-            <h2 className="text-lg font-medium mb-4">Settings</h2>
-            <input
-              type="text"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter OpenAI API key"
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-        )}
+          {showSettings && (
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="api-key">OpenAI API Key</Label>
+                  <Input
+                    id="api-key"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Enter your OpenAI API key"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Upload Document
-            </label>
-            <input
-              type="file"
-              {...register('file')}
-              className="block w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-md file:border-0
-                file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700
-                hover:file:bg-blue-100"
-            />
-            {errors.file && (
-              <p className="mt-2 text-sm text-red-600">{errors.file.message}</p>
-            )}
-          </div>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="file">Upload Document</Label>
+                <div className="flex items-center gap-2">
+                  <FileInput className="h-5 w-5" />
+                  <Input
+                    id="file"
+                    type="file"
+                    {...register('file')}
+                    className="w-full"
+                  />
+                </div>
+                {errors.file && (
+                  <p className="text-sm text-destructive">{errors.file.message}</p>
+                )}
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Query
-            </label>
-            <textarea
-              {...register('query')}
-              rows={3}
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder="Enter your query for summarization..."
-            />
-            {errors.query && (
-              <p className="mt-2 text-sm text-red-600">{errors.query.message}</p>
-            )}
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="query">Query</Label>
+                <Textarea
+                  id="query"
+                  {...register('query')}
+                  rows={3}
+                  placeholder="Enter your query for summarization..."
+                />
+                {errors.query && (
+                  <p className="text-sm text-destructive">{errors.query.message}</p>
+                )}
+              </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {isLoading ? 'Generating Summary...' : 'Generate Summary'}
-          </button>
-        </form>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? 'Generating Summary...' : 'Generate Summary'}
+              </Button>
+            </form>
+          </CardContent>
 
-        {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
+          {error && (
+            <CardFooter className="text-destructive text-sm">
+              {error}
+            </CardFooter>
+          )}
 
-        {summary && (
-          <div className="mt-6 p-6 bg-white rounded-lg shadow">
-            <h2 className="text-lg font-medium mb-4">Summary</h2>
-            <p className="text-gray-700 whitespace-pre-wrap">{summary}</p>
-          </div>
-        )}
+          {summary && (
+            <CardContent>
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Summary</h2>
+                <p className="text-muted-foreground whitespace-pre-wrap">{summary}</p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
       </div>
     </div>
   )
