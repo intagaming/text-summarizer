@@ -18,19 +18,7 @@ export class ProgressiveSummarizer {
       throw new Error("All chapters have been summarized");
     }
 
-    let chapterText = this.chapters[this.currentChapter];
-    
-    // Skip chapters with less than 200 words
-    while (chapterText.split(/\s+/).length < 200) {
-      this.currentChapter++;
-      if (this.currentChapter >= this.chapters.length) {
-        return {
-          summary: "",
-          done: true
-        };
-      }
-      chapterText = this.chapters[this.currentChapter];
-    }
+    const chapterText = this.chapters[this.currentChapter];
 
     const summary = await summarizeChapter(
       this.previousSummary,
