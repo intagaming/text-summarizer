@@ -19,7 +19,6 @@ import { SummaryResults } from "./components/SummaryResults/SummaryResults";
 import { ThemeToggle } from "./components/Theme/ThemeToggle";
 
 const App = () => {
-  const [summary, setSummary] = useState<string | null>(null);
   const [chapterSummaries, setChapterSummaries] = useState<
     Array<{ chapter: string; summary: string }>
   >([]);
@@ -41,7 +40,7 @@ const App = () => {
 
     setIsLoading(true);
     setError("");
-    setSummary(null);
+    setChapterSummaries([]);
     setProgress(0);
 
     let interval: NodeJS.Timeout | undefined = undefined;
@@ -76,16 +75,19 @@ const App = () => {
           setProgress(summarizer.getProgress());
         }, 500);
 
-        const summary = await summarizer.summarizeChapters();
+        let done = false;
+        while (!done) {
+          const { chapter, summary, done: chapterDone } = await summarizer.summarizeNextChapter();
+          setChapterSummaries(prev => [
+            ...prev,
+            { chapter, summary }
+          ].filter((s) => s.chapter !== "" || s.summary !== ""));
+          
+          done = chapterDone;
+        }
+
         clearInterval(interval);
         setProgress(1);
-
-        setSummary(summary);
-        setChapterSummaries(
-          summarizer
-            .getChapterSummaries()
-            .filter((s) => s.chapter !== "" || s.summary !== "")
-        );
       }
     } catch (err) {
       setError(
@@ -102,7 +104,6 @@ const App = () => {
 
   const resetState = () => {
     setConvertedChapters([]);
-    setSummary(null);
     setChapterSummaries([]);
     setIsLoading(false);
     setIsConverting(false);
@@ -161,7 +162,7 @@ const App = () => {
             </CardContent>
           )}
 
-          {summary && (
+          {chapterSummaries.length > 0 && (
             <CardContent>
               <SummaryResults chapterSummaries={chapterSummaries} />
             </CardContent>
