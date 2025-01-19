@@ -208,10 +208,10 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 			} else {
 				for _, entry := range tocXML.NavPoints {
 					tableOfContents = append(tableOfContents, entry.Text)
-					// Extract ID from content.Src (format: file#id)
 					if idStart := strings.Index(entry.Content.Src, "#"); idStart > 0 {
-						id := entry.Content.Src[idStart+1:]
-						tocIDs = append(tocIDs, id)
+						tocIDs = append(tocIDs, entry.Content.Src[idStart+1:])
+					} else {
+						tocIDs = append(tocIDs, "WHOLE_FILE")
 					}
 				}
 			}
@@ -221,16 +221,9 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 	// Process each chapter in spine
 	var chapters []string
 	var currentChapter strings.Builder
-	var inChapter bool
-
-	// Helper function to check if line contains a TOC ID
-	containsTOCID := func(line string) bool {
-		for _, tocID := range tocIDs {
-			if strings.Contains(line, `id="`+tocID+`"`) {
-				return true
-			}
-		}
-		return false
+	var currentTocIndex int = -1
+	if tocIDs[0] == "WHOLE_FILE" {
+		currentTocIndex = 0
 	}
 
 	for _, itemRef := range pkg.Spine.ItemRefs {
@@ -268,21 +261,36 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			// Check for chapter boundary
-			if containsTOCID(line) {
-				// If we're already in a chapter, finalize it
-				if inChapter {
-					chapters = append(chapters, currentChapter.String())
-					currentChapter.Reset()
+			// Check if we need to start a new chapter (skip if current chapter is WHOLE_FILE)
+			if currentTocIndex < len(tocIDs)-1 {
+				var currentTocID string
+				if currentTocIndex >= 0 {
+					currentTocID = tocIDs[currentTocIndex]
 				}
-				inChapter = true
+				nextTocID := tocIDs[currentTocIndex+1]
+
+				if currentTocID != "WHOLE_FILE" && strings.Contains(line, `id="`+nextTocID+`"`) {
+					// Finalize current chapter if exists
+					if currentChapter.Len() > 0 {
+						chapters = append(chapters, currentChapter.String())
+						currentChapter.Reset()
+					}
+					currentTocIndex++
+				}
 			}
 
 			// Collect content if we're in a chapter
-			if inChapter {
+			if currentTocIndex >= 0 {
 				currentChapter.WriteString(line)
 				currentChapter.WriteString("\n")
 			}
+		}
+
+		// Currently at the end of the file. If this was a WHOLE_FILE chapter, finalize it
+		if currentTocIndex >= 0 && (currentTocIndex < len(tocIDs) && tocIDs[currentTocIndex] == "WHOLE_FILE") {
+			chapters = append(chapters, currentChapter.String())
+			currentChapter.Reset()
+			currentTocIndex++
 		}
 
 		if err := scanner.Err(); err != nil {
@@ -291,7 +299,7 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add final chapter if exists
-	if inChapter {
+	if currentTocIndex >= 0 {
 		chapters = append(chapters, currentChapter.String())
 	}
 
