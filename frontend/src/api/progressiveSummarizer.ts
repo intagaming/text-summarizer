@@ -10,6 +10,7 @@ export class ProgressiveSummarizer {
   private stopUntilChapter: string;
   private chapterSummaries: Array<{chapter: string; summary: string}>;
   private tableOfContents: string[];
+  private isCancelled: boolean;
 
   constructor(
     chapters: string[],
@@ -28,11 +29,14 @@ export class ProgressiveSummarizer {
     this.stopUntilChapter = stopUntilChapter;
     this.chapterSummaries = [];
     this.tableOfContents = tableOfContents;
+    this.isCancelled = false;
   }
 
   async summarizeNextChapter(): Promise<{ chapter: string; summary: string; done: boolean }> {
-    if (this.currentChapter >= this.chapters.length) {
-      throw new Error("All chapters have been summarized");
+    if (this.currentChapter >= this.chapters.length || this.isCancelled) {
+      throw new Error(
+        this.isCancelled ? "Summarization cancelled" : "All chapters have been summarized"
+      );
     }
 
     const chapterText = this.chapters[this.currentChapter];
@@ -75,5 +79,13 @@ export class ProgressiveSummarizer {
 
   getProgress() {
     return this.currentChapter / this.chapters.length;
+  }
+
+  cancel() {
+    this.isCancelled = true;
+  }
+
+  checkCancelled() {
+    return this.isCancelled;
   }
 }

@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/card";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { Settings } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ProgressiveSummarizer } from "./api/progressiveSummarizer";
 import { convertEpubToChapters } from "./api/epubConverter";
 import { ProgressIndicator } from "./components/Progress/ProgressIndicator";
@@ -17,6 +17,7 @@ import {
 } from "./components/SummaryForm/SummaryForm";
 import { SummaryResults } from "./components/SummaryResults/SummaryResults";
 import { ThemeToggle } from "./components/Theme/ThemeToggle";
+import { Button } from "./components/ui/button";
 
 const App = () => {
   const [chapterSummaries, setChapterSummaries] = useState<
@@ -30,6 +31,7 @@ const App = () => {
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(0);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const summarizerRef = useRef<ProgressiveSummarizer | null>(null);
   const { apiKey, provider, model } = useSettingsStore();
 
   const handleSubmit = async (data: SummaryFormData) => {
@@ -62,7 +64,7 @@ const App = () => {
           }
         }
 
-        const summarizer = new ProgressiveSummarizer(
+        const newSummarizer = new ProgressiveSummarizer(
           localConvertedChapters,
           apiKey,
           provider,
@@ -70,19 +72,25 @@ const App = () => {
           data.stopUntilChapter || "",
           tocChapters
         );
+        summarizerRef.current = newSummarizer;
 
         interval = setInterval(() => {
-          setProgress(summarizer.getProgress());
+          setProgress(newSummarizer.getProgress());
         }, 500);
 
         let done = false;
         while (!done) {
-          const { chapter, summary, done: chapterDone } = await summarizer.summarizeNextChapter();
-          setChapterSummaries(prev => [
-            ...prev,
-            { chapter, summary }
-          ].filter((s) => s.chapter !== "" || s.summary !== ""));
-          
+          const {
+            chapter,
+            summary,
+            done: chapterDone,
+          } = await newSummarizer.summarizeNextChapter();
+          setChapterSummaries((prev) =>
+            [...prev, { chapter, summary }].filter(
+              (s) => s.chapter !== "" || s.summary !== ""
+            )
+          );
+
           done = chapterDone;
         }
 
@@ -90,9 +98,13 @@ const App = () => {
         setProgress(1);
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
+      if (
+        !(err instanceof Error && err.message === "Summarization cancelled")
+      ) {
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
+      }
     } finally {
       if (interval) {
         clearInterval(interval);
@@ -111,6 +123,13 @@ const App = () => {
     setTocChapters([]);
     setError("");
     setProgress(0);
+    summarizerRef.current = null;
+  };
+
+  const handleCancel = () => {
+    if (summarizerRef.current) {
+      summarizerRef.current.cancel();
+    }
   };
 
   return (
@@ -155,10 +174,17 @@ const App = () => {
 
           {(isLoading || isConverting) && (
             <CardContent>
-              <ProgressIndicator
-                progress={progress}
-                label="Summarizing chapters..."
-              />
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <ProgressIndicator
+                    progress={progress}
+                    label="Summarizing chapters..."
+                  />
+                </div>
+                <Button variant="destructive" onClick={handleCancel}>
+                  Cancel
+                </Button>
+              </div>
             </CardContent>
           )}
 
