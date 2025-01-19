@@ -129,8 +129,7 @@ export const SummaryForm = ({
           if (isConverting) return "Converting EPUB...";
           if (isLoading) return "Generating Summary...";
           if (showChapterSelect && !stopUntilChapter) return "Choose a chapter";
-          if (showChapterSelect)
-            return `Generate summaries until chapter "${stopUntilChapter}" (inclusive)`;
+          if (showChapterSelect) return `Generate summary`;
           return "Continue";
         })()}
       </Button>

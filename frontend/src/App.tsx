@@ -147,7 +147,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-svh bg-background">
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <Card className="max-w-3xl mx-auto">
           <CardHeader className="flex flex-row items-center justify-between">
