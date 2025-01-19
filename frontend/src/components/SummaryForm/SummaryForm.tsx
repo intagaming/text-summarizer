@@ -18,7 +18,6 @@ export type SummaryFormData = z.infer<typeof summaryFormSchema>;
 
 interface SummaryFormProps {
   onSubmit: (data: SummaryFormData) => void;
-  errors: { file?: { message?: string } };
   showChapterSelect: boolean;
   tocChapters: string[];
   isLoading: boolean;
@@ -28,7 +27,6 @@ interface SummaryFormProps {
 
 export const SummaryForm = ({
   onSubmit,
-  errors,
   showChapterSelect,
   tocChapters,
   isLoading,
@@ -65,9 +63,6 @@ export const SummaryForm = ({
             }}
           />
         </div>
-        {errors.file && (
-          <p className="text-sm text-destructive">{errors.file.message}</p>
-        )}
       </div>
 
       <div className="space-y-2">

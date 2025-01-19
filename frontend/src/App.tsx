@@ -171,7 +171,6 @@ const App = () => {
           <CardContent>
             <SummaryForm
               onSubmit={handleSubmit}
-              errors={{ file: { message: error } }}
               showChapterSelect={showChapterSelect}
               tocChapters={tocChapters}
               isLoading={isSubmitting}
