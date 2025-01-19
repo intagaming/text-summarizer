@@ -11,6 +11,7 @@ export class ProgressiveSummarizer {
   private chapterSummaries: Array<{chapter: string; summary: string}>;
   private tableOfContents: string[];
   private isCancelled: boolean;
+  private abortController: AbortController;
 
   constructor(
     chapters: string[],
@@ -30,6 +31,7 @@ export class ProgressiveSummarizer {
     this.chapterSummaries = [];
     this.tableOfContents = tableOfContents;
     this.isCancelled = false;
+    this.abortController = new AbortController();
   }
 
   async summarizeNextChapter(): Promise<{ chapter: string; summary: string; done: boolean }> {
@@ -48,7 +50,8 @@ export class ProgressiveSummarizer {
       this.provider,
       this.model,
       this.stopUntilChapter,
-      this.tableOfContents
+      this.tableOfContents,
+      this.abortController.signal
     );
 
     this.chapterSummaries.push({ chapter, summary });
@@ -83,6 +86,8 @@ export class ProgressiveSummarizer {
 
   cancel() {
     this.isCancelled = true;
+    this.abortController.abort();
+    this.abortController = new AbortController(); // Reset for potential reuse
   }
 
   checkCancelled() {

@@ -9,22 +9,26 @@ export async function summarizeChapter(
   provider: string,
   model: string,
   summarizeUntilChapter: string,
-  tableOfContents: string[]
+  tableOfContents: string[],
+  signal?: AbortSignal
 ) {
-  try {
-    const selectedProvider = PROVIDERS.find(p => p.value === provider);
-    if (!selectedProvider) {
-      throw new Error(`Provider ${provider} not found`);
+  const selectedProvider = PROVIDERS.find((p) => p.value === provider);
+  if (!selectedProvider) {
+    throw new Error(`Provider ${provider} not found`);
+  }
+
+  const openai = new OpenAI({
+    apiKey: apiKey,
+    baseURL: selectedProvider.baseUrl,
+    dangerouslyAllowBrowser: true,
+  });
+
+  const completion = await retryWithBackoff(async () => {
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
     }
-
-    const openai = new OpenAI({
-      apiKey: apiKey,
-      baseURL: selectedProvider.baseUrl,
-      dangerouslyAllowBrowser: true,
-    });
-
-    const completion = await retryWithBackoff(async () => {
-      const toBeReturned = await openai.chat.completions.create({
+    const toBeReturned = await openai.chat.completions.create(
+      {
         model: model,
         messages: [
           {
@@ -102,52 +106,49 @@ ${chapter}
         ],
         temperature: 0.2,
         max_tokens: 1000,
-      });
-      if ("error" in toBeReturned) {
-        throw toBeReturned.error;
+      },
+      {
+        signal,
       }
-      return toBeReturned;
-    });
-
-    const result = completion.choices[0].message.content?.trim();
-    try {
-      // Extract JSON from code block
-      if (!result) {
-        throw new Error("No response content found");
-      }
-
-      const jsonStart = result.indexOf("```json");
-      const jsonEnd = result.lastIndexOf("```");
-      if (jsonStart === -1 || jsonEnd === -1 || jsonStart >= jsonEnd) {
-        throw new Error("No valid JSON code block found");
-      }
-
-      const jsonContent = result.slice(jsonStart + 7, jsonEnd).trim();
-      const parsed = JSON.parse(jsonContent || "{}");
-      if (parsed.notAChapter) {
-        return { chapter: "", summary: "", stop: false };
-      }
-
-      // Determine if we should stop based on our local matching
-      const shouldStop = isChapterMatch(parsed.chapter, summarizeUntilChapter);
-
-      return {
-        chapter: parsed.chapter || "",
-        summary: parsed.summary || "",
-        stop: shouldStop,
-      };
-    } catch (error) {
-      throw new Error(
-        `Failed to parse summary: ${
-          error instanceof Error ? error.message : "Invalid JSON format"
-        }`
-      );
+    );
+    if ("error" in toBeReturned) {
+      throw toBeReturned.error;
     }
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to generate summary: ${error.message}`);
+    return toBeReturned;
+  });
+
+  const result = completion.choices[0].message.content?.trim();
+  try {
+    // Extract JSON from code block
+    if (!result) {
+      throw new Error("No response content found");
     }
-    console.error(error);
-    throw new Error("Failed to generate summary");
+
+    const jsonStart = result.indexOf("```json");
+    const jsonEnd = result.lastIndexOf("```");
+    if (jsonStart === -1 || jsonEnd === -1 || jsonStart >= jsonEnd) {
+      throw new Error("No valid JSON code block found");
+    }
+
+    const jsonContent = result.slice(jsonStart + 7, jsonEnd).trim();
+    const parsed = JSON.parse(jsonContent || "{}");
+    if (parsed.notAChapter) {
+      return { chapter: "", summary: "", stop: false };
+    }
+
+    // Determine if we should stop based on our local matching
+    const shouldStop = isChapterMatch(parsed.chapter, summarizeUntilChapter);
+
+    return {
+      chapter: parsed.chapter || "",
+      summary: parsed.summary || "",
+      stop: shouldStop,
+    };
+  } catch (error) {
+    throw new Error(
+      `Failed to parse summary: ${
+        error instanceof Error ? error.message : "Invalid JSON format"
+      }`
+    );
   }
 }

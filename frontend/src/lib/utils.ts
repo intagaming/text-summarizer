@@ -49,14 +49,26 @@ export function isChapterMatch(chapter: string, target: string): boolean {
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   retries = 3,
-  delay = 1000
+  delay = 1000,
+  signal?: AbortSignal
 ): Promise<T> {
   try {
     return await fn();
   } catch (error) {
+    // Don't retry if the operation was aborted
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error;
+    }
     if (retries <= 0) throw error;
-    await new Promise(resolve => setTimeout(resolve, delay));
-    return retryWithBackoff(fn, retries - 1, delay * 2);
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(resolve, delay);
+      // Clean up timeout if aborted
+      signal?.addEventListener('abort', () => {
+        clearTimeout(timeout);
+        reject(new DOMException('Aborted', 'AbortError'));
+      });
+    });
+    return retryWithBackoff(fn, retries - 1, delay * 2, signal);
   }
 }
 

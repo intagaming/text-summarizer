@@ -98,9 +98,7 @@ const App = () => {
         setProgress(1);
       }
     } catch (err) {
-      if (
-        !(err instanceof Error && err.message === "Summarization cancelled")
-      ) {
+      if (!(err instanceof Error && err.message === "Aborted")) {
         setError(
           err instanceof Error ? err.message : "An unknown error occurred"
         );
