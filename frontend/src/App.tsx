@@ -8,6 +8,7 @@ import { useSettingsStore } from "@/stores/useSettingsStore";
 import { Settings } from "lucide-react";
 import { useState } from "react";
 import { ProgressiveSummarizer } from "./api/progressiveSummarizer";
+import { convertEpubToChapters } from "./api/epubConverter";
 import { ProgressIndicator } from "./components/Progress/ProgressIndicator";
 import { SettingsDialog } from "./components/Settings/SettingsDialog";
 import {
@@ -31,34 +32,6 @@ const App = () => {
   const [progress, setProgress] = useState(0);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { apiKey, provider, model } = useSettingsStore();
-
-  const convertEpubToChapters = async (
-    file: File
-  ): Promise<{ chapters: string[]; toc: string[] }> => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch(
-        "http://localhost:8080/convertEpubToChapters",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
-      const data: { chapters: string[]; toc: string[] } = await response.json();
-      return data;
-    } catch (err) {
-      throw new Error(
-        err instanceof Error ? err.message : "Failed to convert EPUB file"
-      );
-    }
-  };
 
   const handleSubmit = async (data: SummaryFormData) => {
     if (!apiKey) {
