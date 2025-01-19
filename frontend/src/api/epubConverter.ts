@@ -6,7 +6,7 @@ export const convertEpubToChapters = async (
 
   try {
     const response = await fetch(
-      "http://localhost:8080/convertEpubToChapters",
+      `${import.meta.env.VITE_API_URL}/convertEpubToChapters`,
       {
         method: "POST",
         body: formData,
