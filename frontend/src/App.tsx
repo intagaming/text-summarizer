@@ -23,8 +23,9 @@ const App = () => {
   const [chapterSummaries, setChapterSummaries] = useState<
     Array<{ chapter: string; summary: string }>
   >([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
   const [showChapterSelect, setShowChapterSelect] = useState(false);
   const [tocChapters, setTocChapters] = useState<string[]>([]);
   const [convertedChapters, setConvertedChapters] = useState<string[]>([]);
@@ -40,7 +41,7 @@ const App = () => {
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     setError("");
     setChapterSummaries([]);
     setProgress(0);
@@ -64,6 +65,7 @@ const App = () => {
           }
         }
 
+        setIsSummarizing(true);
         const newSummarizer = new ProgressiveSummarizer(
           localConvertedChapters,
           apiKey,
@@ -119,16 +121,18 @@ const App = () => {
       if (interval) {
         clearInterval(interval);
       }
-      setIsLoading(false);
+      setIsSubmitting(false);
       setIsConverting(false);
+      setIsSummarizing(false);
     }
   };
 
   const resetState = () => {
     setConvertedChapters([]);
     setChapterSummaries([]);
-    setIsLoading(false);
+    setIsSubmitting(false);
     setIsConverting(false);
+    setIsSummarizing(false);
     setShowChapterSelect(false);
     setTocChapters([]);
     setError("");
@@ -170,7 +174,7 @@ const App = () => {
               errors={{ file: { message: error } }}
               showChapterSelect={showChapterSelect}
               tocChapters={tocChapters}
-              isLoading={isLoading}
+              isLoading={isSubmitting}
               isConverting={isConverting}
               onFileChange={resetState}
             />
@@ -182,18 +186,24 @@ const App = () => {
             </CardFooter>
           )}
 
-          {(isLoading || isConverting) && (
+          {isSubmitting && (
             <CardContent>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <ProgressIndicator
                     progress={progress}
-                    label="Summarizing chapters..."
+                    label={
+                      isConverting
+                        ? "Reading the EPUB..."
+                        : "Summarizing chapters..."
+                    }
                   />
                 </div>
-                <Button variant="destructive" onClick={handleCancel}>
-                  Cancel
-                </Button>
+                {isSummarizing && (
+                  <Button variant="destructive" onClick={handleCancel}>
+                    Cancel
+                  </Button>
+                )}
               </div>
             </CardContent>
           )}
