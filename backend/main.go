@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -27,8 +28,16 @@ func main() {
 	mux.Handle("/convertEpubToChapters", loggingMiddleware(recoveryMiddleware(http.HandlerFunc(handlers.ConvertEpubToChaptersHandler))))
 
 	// Configure CORS
+	corsOrigins := os.Getenv("CORS_ORIGINS")
+	var allowedOrigins []string
+	if corsOrigins != "" {
+		allowedOrigins = strings.Split(corsOrigins, ",")
+	} else {
+		allowedOrigins = []string{"http://localhost:5173"} // Default to localhost
+	}
+
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"}, // Allow frontend origin
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
