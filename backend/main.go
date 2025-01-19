@@ -26,6 +26,7 @@ func main() {
 
 	// Register handlers with logging and recovery middleware
 	mux.Handle("/convertEpubToChapters", loggingMiddleware(recoveryMiddleware(http.HandlerFunc(handlers.ConvertEpubToChaptersHandler))))
+	mux.Handle("/health", loggingMiddleware(recoveryMiddleware(http.HandlerFunc(handlers.HealthCheckHandler))))
 
 	// Configure CORS
 	corsOrigins := os.Getenv("CORS_ORIGINS")
