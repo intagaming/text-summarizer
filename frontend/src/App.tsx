@@ -80,11 +80,22 @@ const App = () => {
 
         let done = false;
         while (!done) {
+          const summarizeNextChapterPromise =
+            newSummarizer.summarizeNextChapter();
+          const preemptiveCancelStop = new Promise((_, reject) => {
+            newSummarizer.on("cancel", () => {
+              reject(new Error("Aborted"));
+            });
+          });
+          await Promise.race([
+            summarizeNextChapterPromise,
+            preemptiveCancelStop,
+          ]);
           const {
             chapter,
             summary,
             done: chapterDone,
-          } = await newSummarizer.summarizeNextChapter();
+          } = await summarizeNextChapterPromise;
           setChapterSummaries((prev) =>
             [...prev, { chapter, summary }].filter(
               (s) => s.chapter !== "" || s.summary !== ""
@@ -98,7 +109,8 @@ const App = () => {
         setProgress(1);
       }
     } catch (err) {
-      if (!(err instanceof Error && err.message === "Aborted")) {
+      const isAborted = err instanceof Error && err.message === "Aborted";
+      if (!isAborted) {
         setError(
           err instanceof Error ? err.message : "An unknown error occurred"
         );

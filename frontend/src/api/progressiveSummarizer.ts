@@ -1,6 +1,7 @@
 import { summarizeChapter } from "./summarize";
+import { EventEmitter } from "events";
 
-export class ProgressiveSummarizer {
+export class ProgressiveSummarizer extends EventEmitter {
   private chapters: string[];
   private currentChapter: number;
   private previousSummary: string;
@@ -8,7 +9,7 @@ export class ProgressiveSummarizer {
   private provider: string;
   private model: string;
   private stopUntilChapter: string;
-  private chapterSummaries: Array<{chapter: string; summary: string}>;
+  private chapterSummaries: Array<{ chapter: string; summary: string }>;
   private tableOfContents: string[];
   private isCancelled: boolean;
   private abortController: AbortController;
@@ -21,6 +22,7 @@ export class ProgressiveSummarizer {
     stopUntilChapter: string,
     tableOfContents: string[]
   ) {
+    super();
     this.chapters = chapters;
     this.currentChapter = 0;
     this.previousSummary = "";
@@ -34,10 +36,16 @@ export class ProgressiveSummarizer {
     this.abortController = new AbortController();
   }
 
-  async summarizeNextChapter(): Promise<{ chapter: string; summary: string; done: boolean }> {
+  async summarizeNextChapter(): Promise<{
+    chapter: string;
+    summary: string;
+    done: boolean;
+  }> {
     if (this.currentChapter >= this.chapters.length || this.isCancelled) {
       throw new Error(
-        this.isCancelled ? "Summarization cancelled" : "All chapters have been summarized"
+        this.isCancelled
+          ? "Summarization cancelled"
+          : "All chapters have been summarized"
       );
     }
 
@@ -86,6 +94,7 @@ export class ProgressiveSummarizer {
 
   cancel() {
     this.isCancelled = true;
+    this.emit("cancel");
     this.abortController.abort();
     this.abortController = new AbortController(); // Reset for potential reuse
   }
