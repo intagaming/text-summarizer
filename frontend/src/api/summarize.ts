@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { isChapterMatch } from "../lib/utils";
+import { isChapterMatch, retryWithBackoff } from "../lib/utils";
 
 export async function summarizeChapter(
   previousSummary: string,
@@ -15,12 +15,13 @@ export async function summarizeChapter(
       dangerouslyAllowBrowser: true,
     });
 
-    const completion = await openai.chat.completions.create({
-      model: "google/gemini-flash-1.5-8b",
-      messages: [
-        {
-          role: "system",
-          content: `
+    const completion = await retryWithBackoff(async () => {
+      return await openai.chat.completions.create({
+        model: "google/gemini-flash-1.5-8b",
+        messages: [
+          {
+            role: "system",
+            content: `
 You are a book summarization assistant. Your responsibilities:
 - Identify key plot points, character developments, and important details
 - Use the provided table of contents as the source of truth for chapter names
@@ -55,10 +56,10 @@ Example:
 \`\`\`
 <example>
           `.trim(),
-        },
-        {
-          role: "user",
-          content: `
+          },
+          {
+            role: "user",
+            content: `
 ### Input Data
 <TableOfContents>
 ${tableOfContents
@@ -88,10 +89,11 @@ ${chapter}
 \`\`\`
 </example>
           `.trim(),
-        },
-      ],
-      temperature: 0.2,
-      max_tokens: 1000,
+          },
+        ],
+        temperature: 0.2,
+        max_tokens: 1000,
+      });
     });
 
     const result = completion.choices[0].message.content?.trim();
