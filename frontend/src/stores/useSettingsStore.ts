@@ -16,7 +16,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   theme: localStorage.getItem('text-summarizer-theme') === 'dark' ? 'dark' : 'light',
   apiKey: localStorage.getItem('text-summarizer-api-key') || '',
   provider: localStorage.getItem('text-summarizer-provider') || PROVIDERS[0].value,
-  model: localStorage.getItem('text-summarizer-model') || 'gpt-3.5-turbo',
+  model: localStorage.getItem('text-summarizer-model') || '',
   setTheme: (theme) => {
     localStorage.setItem('text-summarizer-theme', theme);
     document.documentElement.classList.toggle('dark', theme === 'dark');
