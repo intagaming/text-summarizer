@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"archive/zip"
-	"bytes"
+	"bufio"
 	"encoding/json"
 	"encoding/xml"
 	"io"
@@ -11,8 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"golang.org/x/net/html"
 )
 
 type container struct {
@@ -225,11 +223,14 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 	var currentChapter strings.Builder
 	var inChapter bool
 
-	// Helper function to render HTML node to string
-	renderNode := func(n *html.Node) string {
-		var buf bytes.Buffer
-		html.Render(&buf, n)
-		return buf.String()
+	// Helper function to check if line contains a TOC ID
+	containsTOCID := func(line string) bool {
+		for _, tocID := range tocIDs {
+			if strings.Contains(line, `id="`+tocID+`"`) {
+				return true
+			}
+		}
+		return false
 	}
 
 	for _, itemRef := range pkg.Spine.ItemRefs {
@@ -254,7 +255,7 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Open and parse chapter HTML
+		// Open and read chapter content
 		chapterContent, err := chapterFile.Open()
 		if err != nil {
 			log.Printf("Error reading chapter file: %v\n", err)
@@ -262,48 +263,31 @@ func ConvertEpubToChaptersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer chapterContent.Close()
 
-		// Parse HTML content
-		doc, err := html.Parse(chapterContent)
-		if err != nil {
-			log.Printf("Error parsing HTML: %v\n", err)
-			continue
-		}
+		// Read chapter content line by line
+		scanner := bufio.NewScanner(chapterContent)
+		for scanner.Scan() {
+			line := scanner.Text()
 
-		// Process HTML nodes
-		var processNode func(*html.Node)
-		processNode = func(n *html.Node) {
-			if n.Type == html.ElementNode {
-				// Check for chapter boundary using TOC IDs in any element
-				for _, tocID := range tocIDs {
-					for _, attr := range n.Attr {
-						if attr.Key == "id" && attr.Val == tocID {
-							// If we're already in a chapter, finalize it
-							if inChapter {
-								chapters = append(chapters, currentChapter.String())
-								currentChapter.Reset()
-							}
-							inChapter = true
-							break
-						}
-					}
-				}
-
-				// Collect content if we're in a chapter
+			// Check for chapter boundary
+			if containsTOCID(line) {
+				// If we're already in a chapter, finalize it
 				if inChapter {
-					if n.Data == "p" || n.Data == "div" || strings.HasPrefix(n.Data, "h") {
-						currentChapter.WriteString(renderNode(n))
-						currentChapter.WriteString("\n")
-					}
+					chapters = append(chapters, currentChapter.String())
+					currentChapter.Reset()
 				}
+				inChapter = true
 			}
 
-			// Process child nodes
-			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				processNode(c)
+			// Collect content if we're in a chapter
+			if inChapter {
+				currentChapter.WriteString(line)
+				currentChapter.WriteString("\n")
 			}
 		}
 
-		processNode(doc)
+		if err := scanner.Err(); err != nil {
+			log.Printf("Error reading chapter content: %v\n", err)
+		}
 	}
 
 	// Add final chapter if exists
