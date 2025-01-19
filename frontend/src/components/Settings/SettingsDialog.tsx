@@ -1,12 +1,4 @@
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -15,15 +7,23 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import { useEffect, useState } from "react";
 import { PROVIDERS } from "@/config/providers";
+import { cn, debounce } from "@/lib/utils";
+import { useSettingsStore } from "@/stores/useSettingsStore";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 
 interface SettingsDialogProps {
@@ -49,6 +49,7 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
           },
         });
         const data = await response.json();
@@ -59,8 +60,12 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
       }
     };
 
-    fetchModels();
-  }, [provider]);
+    const debouncedFetchModels = debounce(fetchModels, 300);
+    debouncedFetchModels();
+    return () => {
+      debouncedFetchModels.cancel();
+    };
+  }, [apiKey, provider]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,6 +180,9 @@ export const SettingsDialog = ({ open, onOpenChange }: SettingsDialogProps) => {
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="Enter your API key"
             />
+            <div className="text-sm text-muted-foreground">
+              Note: Some providers require an API key to view available models.
+            </div>
           </div>
         </div>
       </DialogContent>
