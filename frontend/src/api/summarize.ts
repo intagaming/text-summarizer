@@ -1,23 +1,31 @@
 import OpenAI from "openai";
 import { isChapterMatch, retryWithBackoff } from "../lib/utils";
+import { PROVIDERS } from "@/config/providers";
 
 export async function summarizeChapter(
   previousSummary: string,
   chapter: string,
   apiKey: string,
+  provider: string,
+  model: string,
   summarizeUntilChapter: string,
   tableOfContents: string[]
 ) {
   try {
+    const selectedProvider = PROVIDERS.find(p => p.value === provider);
+    if (!selectedProvider) {
+      throw new Error(`Provider ${provider} not found`);
+    }
+
     const openai = new OpenAI({
       apiKey: apiKey,
-      baseURL: "https://openrouter.ai/api/v1",
+      baseURL: selectedProvider.baseUrl,
       dangerouslyAllowBrowser: true,
     });
 
     const completion = await retryWithBackoff(async () => {
       const toBeReturned = await openai.chat.completions.create({
-        model: "google/gemini-2.0-flash-exp:free",
+        model: model,
         messages: [
           {
             role: "system",
@@ -116,7 +124,7 @@ ${chapter}
       const jsonContent = result.slice(jsonStart + 7, jsonEnd).trim();
       const parsed = JSON.parse(jsonContent || "{}");
       if (parsed.notAChapter) {
-        return { chapter: "", summary: "" };
+        return { chapter: "", summary: "", stop: false };
       }
 
       // Determine if we should stop based on our local matching

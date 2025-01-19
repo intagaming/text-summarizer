@@ -30,7 +30,7 @@ const App = () => {
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(0);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { apiKey } = useSettingsStore();
+  const { apiKey, provider, model } = useSettingsStore();
 
   const convertEpubToChapters = async (
     file: File
@@ -93,6 +93,8 @@ const App = () => {
         const summarizer = new ProgressiveSummarizer(
           localConvertedChapters,
           apiKey,
+          provider,
+          model,
           data.stopUntilChapter || "",
           tocChapters
         );

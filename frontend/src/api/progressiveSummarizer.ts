@@ -5,15 +5,26 @@ export class ProgressiveSummarizer {
   private currentChapter: number;
   private previousSummary: string;
   private apiKey: string;
+  private provider: string;
+  private model: string;
   private stopUntilChapter: string;
   private chapterSummaries: Array<{chapter: string; summary: string}>;
   private tableOfContents: string[];
 
-  constructor(chapters: string[], apiKey: string, stopUntilChapter: string, tableOfContents: string[]) {
+  constructor(
+    chapters: string[],
+    apiKey: string,
+    provider: string,
+    model: string,
+    stopUntilChapter: string,
+    tableOfContents: string[]
+  ) {
     this.chapters = chapters;
     this.currentChapter = 0;
     this.previousSummary = "";
     this.apiKey = apiKey;
+    this.provider = provider;
+    this.model = model;
     this.stopUntilChapter = stopUntilChapter;
     this.chapterSummaries = [];
     this.tableOfContents = tableOfContents;
@@ -30,35 +41,39 @@ export class ProgressiveSummarizer {
       this.previousSummary,
       chapterText,
       this.apiKey,
+      this.provider,
+      this.model,
       this.stopUntilChapter,
       this.tableOfContents
     );
 
-    this.chapterSummaries.push({chapter, summary});
-    this.previousSummary = `${this.previousSummary}\n\n${chapter}\n${summary}`.trim();
+    this.chapterSummaries.push({ chapter, summary });
+    this.previousSummary = summary;
     this.currentChapter++;
 
     return {
-      chapter: chapter || "",
-      summary: summary || "",
+      chapter,
+      summary,
       done: stop || this.currentChapter >= this.chapters.length,
     };
   }
 
-  getChapterSummaries(): Array<{chapter: string; summary: string}> {
+  async summarizeChapters(): Promise<string> {
+    while (this.currentChapter < this.chapters.length) {
+      const { done } = await this.summarizeNextChapter();
+      if (done) break;
+    }
+
+    return this.chapterSummaries
+      .map((cs) => `## ${cs.chapter}\n\n${cs.summary}`)
+      .join("\n\n");
+  }
+
+  getChapterSummaries() {
     return this.chapterSummaries;
   }
 
-  getProgress(): number {
-    return this.chapters.length > 0
-      ? this.currentChapter / this.chapters.length
-      : 0;
-  }
-
-  async summarizeChapters(): Promise<string> {
-    while (!(await this.summarizeNextChapter()).done) {
-      // Continue summarizing until done
-    }
-    return this.previousSummary;
+  getProgress() {
+    return this.currentChapter / this.chapters.length;
   }
 }
