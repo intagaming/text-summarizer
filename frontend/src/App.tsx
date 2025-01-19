@@ -4,16 +4,18 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import { Settings } from "lucide-react";
 import { useState } from "react";
 import { ProgressiveSummarizer } from "./api/progressiveSummarizer";
-import { summarizeText } from "./api/summarize";
 import { ProgressIndicator } from "./components/Progress/ProgressIndicator";
 import { SettingsDialog } from "./components/Settings/SettingsDialog";
-import { SummaryForm, SummaryFormData } from "./components/SummaryForm/SummaryForm";
+import {
+  SummaryForm,
+  SummaryFormData,
+} from "./components/SummaryForm/SummaryForm";
 import { SummaryResults } from "./components/SummaryResults/SummaryResults";
 import { ThemeToggle } from "./components/Theme/ThemeToggle";
-import { useSettingsStore } from "@/stores/useSettingsStore";
 
 const App = () => {
   const [summary, setSummary] = useState<string | null>(null);
@@ -107,9 +109,6 @@ const App = () => {
             .getChapterSummaries()
             .filter((s) => s.chapter !== "" || s.summary !== "")
         );
-      } else {
-        const text = await data.file.text();
-        setSummary(await summarizeText(text, "", apiKey));
       }
     } catch (err) {
       setError(

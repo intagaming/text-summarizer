@@ -1,44 +1,6 @@
 import OpenAI from "openai";
 import { isChapterMatch } from "../lib/utils";
 
-export async function summarizeText(
-  text: string,
-  query: string,
-  apiKey: string
-) {
-  try {
-    const openai = new OpenAI({
-      apiKey: apiKey,
-      baseURL: "https://openrouter.ai/api/v1",
-      dangerouslyAllowBrowser: true,
-    });
-
-    const completion = await openai.chat.completions.create({
-      model: "google/gemini-flash-1.5",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful assistant that skims text based on user queries.",
-        },
-        {
-          role: "user",
-          content: `Text: ${text}\n\nQuery: ${query}\n\nPlease skim the text, replacing lengthy or less relevant sections with "[...]" while preserving key points and context.`,
-        },
-      ],
-      temperature: 0.2,
-      max_tokens: 1000,
-    });
-
-    return completion.choices[0].message.content;
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to generate summary: ${error.message}`);
-    }
-    throw new Error("Failed to generate summary");
-  }
-}
-
 export async function summarizeChapter(
   previousSummary: string,
   chapter: string,
@@ -99,7 +61,9 @@ Example:
           content: `
 ### Input Data
 <TableOfContents>
-${tableOfContents.map(chapter => `<chapter_name>${chapter}</chapter_name>`).join("\n")}
+${tableOfContents
+  .map((chapter) => `<chapter_name>${chapter}</chapter_name>`)
+  .join("\n")}
 </TableOfContents>
 
 <PreviousSummary>
