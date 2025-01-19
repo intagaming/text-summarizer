@@ -71,6 +71,8 @@ const App = () => {
     setSummary(null);
     setProgress(0);
 
+    let interval: NodeJS.Timeout | undefined = undefined;
+
     try {
       if (data.file.type === "application/epub+zip") {
         let localConvertedChapters = convertedChapters;
@@ -95,7 +97,7 @@ const App = () => {
           tocChapters
         );
 
-        const interval = setInterval(() => {
+        interval = setInterval(() => {
           setProgress(summarizer.getProgress());
         }, 500);
 
@@ -115,6 +117,9 @@ const App = () => {
         err instanceof Error ? err.message : "An unknown error occurred"
       );
     } finally {
+      if (interval) {
+        clearInterval(interval);
+      }
       setIsLoading(false);
       setIsConverting(false);
     }

@@ -16,8 +16,8 @@ export async function summarizeChapter(
     });
 
     const completion = await retryWithBackoff(async () => {
-      return await openai.chat.completions.create({
-        model: "google/gemini-flash-1.5-8b",
+      const toBeReturned = await openai.chat.completions.create({
+        model: "google/gemini-2.0-flash-exp:free",
         messages: [
           {
             role: "system",
@@ -94,6 +94,10 @@ ${chapter}
         temperature: 0.2,
         max_tokens: 1000,
       });
+      if ("error" in toBeReturned) {
+        throw toBeReturned.error;
+      }
+      return toBeReturned;
     });
 
     const result = completion.choices[0].message.content?.trim();
@@ -134,6 +138,7 @@ ${chapter}
     if (error instanceof Error) {
       throw new Error(`Failed to generate summary: ${error.message}`);
     }
+    console.error(error);
     throw new Error("Failed to generate summary");
   }
 }
