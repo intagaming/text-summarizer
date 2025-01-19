@@ -12,20 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FileInput } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-
-export const summaryFormSchema = z.object({
-  file: z
-    .instanceof(File)
-    .refine(
-      (file) =>
-        file.type === "application/epub+zip" || file.type === "text/plain",
-      {
-        message: "Only EPUB and text files are allowed",
-      }
-    ),
-  type: z.enum(["book"]),
-  stopUntilChapter: z.string().optional(),
-});
+import { summaryFormSchema } from "./summaryFormSchema";
 
 export type SummaryFormData = z.infer<typeof summaryFormSchema>;
 
@@ -48,12 +35,15 @@ export const SummaryForm = ({
   isConverting,
   onFileChange,
 }: SummaryFormProps) => {
-  const { handleSubmit, setValue, control } = useForm<SummaryFormData>({
+  const { handleSubmit, setValue, control, watch } = useForm<SummaryFormData>({
     resolver: zodResolver(summaryFormSchema),
     defaultValues: {
       type: "book",
     },
   });
+
+  const file = watch("file");
+  const stopUntilChapter = watch("stopUntilChapter");
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -132,16 +122,22 @@ export const SummaryForm = ({
 
       <Button
         type="submit"
-        disabled={isLoading || isConverting}
+        disabled={
+          !file ||
+          isLoading ||
+          isConverting ||
+          (showChapterSelect && !stopUntilChapter)
+        }
         className="w-full"
       >
-        {isConverting
-          ? "Converting EPUB..."
-          : isLoading
-          ? "Generating Summary..."
-          : showChapterSelect
-          ? "Continue"
-          : "Generate Summary"}
+        {(() => {
+          if (isConverting) return "Converting EPUB...";
+          if (isLoading) return "Generating Summary...";
+          if (showChapterSelect && !stopUntilChapter) return "Choose a chapter";
+          if (showChapterSelect)
+            return `Generate summaries until chapter "${stopUntilChapter}" (inclusive)`;
+          return "Continue";
+        })()}
       </Button>
     </form>
   );
