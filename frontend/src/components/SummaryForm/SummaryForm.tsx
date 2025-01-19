@@ -2,11 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileInput } from "lucide-react";
@@ -48,11 +48,7 @@ export const SummaryForm = ({
   isConverting,
   onFileChange,
 }: SummaryFormProps) => {
-  const {
-    handleSubmit,
-    setValue,
-    control,
-  } = useForm<SummaryFormData>({
+  const { handleSubmit, setValue, control } = useForm<SummaryFormData>({
     resolver: zodResolver(summaryFormSchema),
     defaultValues: {
       type: "book",
@@ -73,6 +69,7 @@ export const SummaryForm = ({
               const files = e.target.files;
               if (files && files.length > 0) {
                 setValue("file", files[0]);
+                setValue("stopUntilChapter", undefined);
                 onFileChange(files[0]);
               }
             }}
@@ -116,10 +113,7 @@ export const SummaryForm = ({
             name="stopUntilChapter"
             control={control}
             render={({ field }) => (
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-              >
+              <Select onValueChange={field.onChange} value={field.value}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a chapter" />
                 </SelectTrigger>
